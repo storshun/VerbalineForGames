@@ -1,0 +1,66 @@
+# Defaults for Verbaline For Games. A project's verbaline.toml overrides any of them, and so does the machine's own
+# ~/.config/verbaline/config.toml (model checkouts and Python environments belong there). Reference:
+# docs/details/configuration-details.md.
+
+[project]
+# name = "My Game"                 # shown in the page's title (default: the project folder's name)
+# work_dir = "~/MyGame_VO"         # takes, references, scores and picks: big WAVs, keep it outside the repo
+                                   # (default: <project>/.verbaline)
+language = "en"
+port = 8765                        # verbaline serve's default port
+# The words a new voice's candidates read when they're designed (a voice's own `passage` in cast.toml wins).
+passage = "The quick brown fox jumps over the lazy dog. Somewhere far away, a bell rang twice, and then everything went quiet."
+
+[apply]
+label = "Apply to game"            # the page's button
+about = ""                         # its tooltip: what Apply does in this project
+# command = ["{python}", "tools/import_vo.py", "{manifest}"]   # run after the picks are exported (see the docs)
+# copy_to = "assets/vo"            # or: copy the exported files and manifest.json here
+# prune = false                    # with copy_to: also delete .wav files there that are no longer picked
+words_from_manifest = false        # true when the game shows the manifest's words (not the lines file's):
+                                   # then a line whose words changed since the last Apply shows "not in the game yet"
+
+[repos]
+# Seed-VC checkout (voice conversion of your own performances, ⇄ Mirror, ✦ Restyle). https://github.com/Plachtaa/seed-vc
+seed_vc = "~/AI/seed-vc"
+seed_vc_python = ""                # its own venv's python, when its requirements clash (empty: the studio's)
+index_tts = ""                     # optional: IndexTTS2 checkout (check its license before shipping its output)
+step_audio_editx = ""              # optional: Step-Audio-EditX checkout (scripts/install_editx.sh)
+step_audio_models = ""
+
+[envs]
+# The Python each model runs in, when their requirements clash (empty: the Python running the studio). The studio
+# re-runs itself in the right one.
+qwen = ""
+indextts2 = ""
+score = ""
+editx = ""
+
+[tts]
+takes = 8                          # takes generated per line
+backend = "qwen"                   # the default engine: qwen (Qwen3-TTS cloning) or indextts2
+
+[convert]
+kinds = ["clone", "pitch"]
+cfg_rate = 0.7
+diffusion_steps = 30
+
+[train]
+steps = 600
+batch_size = 4
+gpu_slot = ""                      # a script that waits for a free GPU before a job (optional)
+
+[score]
+whisper_model = "large-v3"
+max_wer = 0.34
+weight_words = 0.45
+weight_voice = 0.35
+weight_quality = 0.20
+
+[master]
+sample_rate = 48000
+loudness_lufs = -18.0
+peak_dbfs = -1.0
+pad_ms = 60
+highpass_hz = 70
+name = "{id}"                      # an exported file's name, without .wav: {id}, {key}, {lang}, {group}, {speaker}

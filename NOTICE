@@ -1,0 +1,5 @@
+Verbaline For Games
+Copyright 2026 storshun (https://github.com/storshun)
+
+This product drives third-party models (Qwen3-TTS, Seed-VC, Step-Audio-EditX, IndexTTS2, faster-whisper,
+SpeechBrain, torchaudio) that it does not include; each is under its own license (docs/details/engines-details.md).

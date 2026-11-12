@@ -1,0 +1,7 @@
+# How each line should be played, when the default isn't right. The page's Lines tab edits this file.
+# Per line: emotion, note (direction shown when recording and auditioning), voice, say (what the engine reads),
+# engine, pitch_shift, parts (a line in tones: [urgent]...[/][sad]...[/]).
+
+[lines.storm_after]
+note = "Shouting into the radio, then the silence lands."
+parts = "[urgent]Gull, come in![/][pause 1.2][sad]...Gull?[/]"

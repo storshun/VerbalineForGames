@@ -1,0 +1,16 @@
+# The base environment for Verbaline For Games (the page, lines/status/record/master/apply, and scoring).
+# Install PyTorch with CUDA first, matching the driver: https://pytorch.org/get-started/locally/
+# Model packages that clash with these go in their own venvs ([envs] in your config); see docs/details/install-details.md.
+numpy
+scipy
+soundfile
+sounddevice          # recording (needs PortAudio: `sudo dnf install portaudio` on Fedora)
+pyloudnorm
+tomlkit              # the page edits cast.toml / directions.toml, keeping their comments
+faster-whisper       # scoring: what a take actually says
+speechbrain          # scoring: does it sound like the voice
+torchaudio           # scoring: SQUIM audio-quality estimate
+# Models (each may want its own venv):
+#   qwen-tts           Qwen3-TTS VoiceDesign / Base (Apache 2.0); flash-attn optional
+#   Seed-VC            git clone https://github.com/Plachtaa/seed-vc  (its own requirements.txt)
+#   IndexTTS2          optional: git clone https://github.com/index-tts/index-tts (license: check before shipping)

@@ -1,0 +1,942 @@
+<!doctype html><html><head><meta charset="utf-8"><title>{{PROJECT}}: Verbaline For Games</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--bg:#0f1115;--card:#171a21;--line:#262b36;--fg:#e6e8ee;--dim:#8b93a7;--acc:#5cc8ff;--ok:#5fd38d;--warn:#ffb454;--bad:#ff6b6b;--cloud:#c79bff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif;padding-bottom:60px}
+header{position:sticky;top:0;background:#0f1115ee;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;z-index:3}
+header b{font-size:15px;margin-right:4px}
+select,input,textarea{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit}
+textarea{width:100%;resize:vertical;min-height:34px;font-size:13px}input[type=number]{width:80px}
+.tabs button{border-radius:6px}.tabs button.on{border-color:var(--acc);color:var(--acc)}
+.count{color:var(--dim);margin-left:auto}main{max-width:1100px;margin:0 auto;padding:12px 16px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}
+.card.sel{outline:2px solid var(--acc)}.head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.who{font-weight:600}.ids{color:var(--dim);font-size:12px}.pill{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:0 8px;color:var(--dim)}
+.pill.cloud{color:var(--cloud);border-color:var(--cloud)}.pill.local{color:var(--ok);border-color:#2d5c40}
+.text{font-size:16px;margin:6px 0}.picked{color:var(--ok);font-size:12px}.badge{font-size:12px;color:var(--acc)}
+.dir{display:grid;grid-template-columns:auto auto 1fr;gap:6px 10px;align-items:center;background:#12151b;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0}
+.dir label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}.dir .wide{grid-column:1/4}
+.gen{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.gen .why{font-size:12px;color:var(--warn)}
+.take{display:grid;grid-template-columns:24px 70px 1fr auto auto auto auto;gap:10px;align-items:center;padding:6px 0;border-top:1px dashed var(--line)}
+.take.on{background:#5fd38d14}audio{width:100%;height:30px}.n{color:var(--dim);text-align:right}
+.src{font-size:12px;color:var(--dim)}.sc{font-size:12px;color:var(--dim);white-space:nowrap}
+.heard{grid-column:3/8;font-size:12px;color:var(--dim);margin-top:-4px}
+.tw{grid-column:3/8;font-size:13px;color:var(--acc);margin-top:-2px}.tw b{font-weight:600}
+.ed{grid-column:3/8;display:flex;gap:8px;align-items:flex-start}.ed textarea{flex:1;min-height:52px;border-color:var(--acc)}
+button{background:#232836;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;font:inherit;font-size:13px}
+button:hover:not(:disabled){border-color:var(--acc)}button:disabled{opacity:.45;cursor:default}
+button.p{border-color:var(--ok)}button.t{border-color:var(--acc)}button.go{border-color:var(--acc);color:var(--acc)}button.cl{border-color:var(--cloud);color:var(--cloud)}
+details.more{margin-top:6px}.none{color:var(--dim);font-size:13px;margin-top:6px}
+.vgrid{display:grid;grid-template-columns:140px 1fr;gap:6px 12px;align-items:start;margin-top:8px}
+.vgrid>span{font-size:12px;color:var(--dim);padding-top:6px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.clip{display:grid;grid-template-columns:90px 1fr auto auto;gap:8px;align-items:center;padding:3px 0}
+.tks{margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.tk{display:flex;align-items:center;gap:10px;padding:6px 10px;border-top:1px solid var(--line)}.tks>.tk:first-child{border-top:0}.tk:hover{background:#1c2029}.tk.on{background:#5fd38d14}
+.tnum{color:var(--dim);font-size:12px;width:16px;text-align:right}.tsrc{font-size:12px;color:var(--dim);white-space:nowrap}
+.heardc{flex:1;font-size:12px;color:var(--warn);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.score{font-size:12px;font-weight:600;border-radius:99px;padding:1px 8px;background:#232836;color:var(--dim);cursor:help;min-width:34px;text-align:center}
+.score.good{color:var(--ok);background:#173325}.score.ok{color:var(--fg)}.score.warn{color:var(--warn);background:#33291a}.score.bad{color:var(--bad);background:#3a1d1d}
+button.pk{min-width:78px}button.pk.p{color:var(--ok)}
+.tmore summary{padding:6px 10px;font-size:12px;color:var(--dim);cursor:pointer;border-top:1px solid var(--line)}.tmore .tk:first-of-type{border-top:1px solid var(--line)}
+.ed2{display:flex;gap:8px;align-items:flex-start;padding:6px 10px 8px 46px}.ed2 textarea{flex:1;min-height:52px;border-color:var(--acc)}
+.refed{flex-wrap:wrap;align-items:center;font-size:13px;color:var(--dim)}.refed select{font-size:13px}
+.tw2{padding:0 10px 6px 46px;font-size:13px;color:var(--acc)}
+.dir2{display:grid;grid-template-columns:auto auto 1fr;gap:8px;align-items:start;margin:8px 0 6px}.dir2 select{font-size:13px}
+.dir2 .say{grid-column:1/4;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--dim)}.say input{flex:1;min-width:0;font-size:13px}
+.pron td{padding:2px 6px}.pron input{font-size:13px}
+.parts{margin:6px 0 8px;border:1px solid #2f3a4d;border-radius:8px;background:#12151b;padding:6px 10px}
+.parts .ph,.parts .pf{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:2px 0}.parts .pf{padding-top:6px}
+.parts textarea{width:100%;box-sizing:border-box;min-height:64px;margin:6px 0 4px;font:13px/1.5 ui-monospace,Menlo,monospace;border-color:var(--acc)}
+.parts code{font-size:12px;color:var(--fg);background:#232836;border-radius:4px;padding:0 4px}
+.pr{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:5px 0;border-top:1px dashed var(--line)}.parts .ph+.pr{border-top:0}
+.tone{font-size:12px;font-weight:600;color:var(--tc);border:1px solid var(--tc);border-radius:99px;padding:0 8px;white-space:nowrap}
+.ptext{flex:1 1 260px;min-width:0;font-size:14px}.pr .why{font-size:12px;color:var(--warn);cursor:help}
+.ptries{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.ptry{display:inline-flex;align-items:center;border:1px solid transparent;border-radius:99px}
+.ptry.on{border-color:var(--ok);background:#5fd38d14}.ptry .play{border:0;background:none}button.use{border:0;background:none;padding:0 8px 0 2px;font-size:12px;color:var(--dim)}
+.ptry.on button.use{color:var(--ok)}button.use:hover{color:var(--acc)}select.pg{font-size:12px;padding:2px 4px;color:var(--dim)}
+.pgap{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--dim);padding:0 0 0 14px}.pgap input{width:4.2em;font-size:12px;padding:2px 6px}
+.pp{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--dim);min-height:22px}.pp .pchip{display:inline-flex;gap:6px;align-items:center;max-width:100%}
+.pp .err{color:var(--bad)}
+.genbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.genbar select{font-size:12px}.genbar .sp{flex:1}.genbar .why{font-size:12px;color:var(--warn)}
+.perf{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--dim)}
+button.rec{border-color:#6b2a2a;color:#ff9b9b}button.rec b{color:var(--bad);font-size:11px}
+button.rec.on{background:#3a1d1d;border-color:var(--bad);color:#fff;display:inline-flex;gap:8px;align-items:center}
+.rt{font-variant-numeric:tabular-nums;min-width:40px}.meter{width:80px;height:6px;border-radius:3px;background:#0f1115;overflow:hidden;display:inline-block}
+.meter i{display:block;height:100%;width:0;background:var(--ok)}.ptk{display:inline-flex;align-items:center;gap:2px}
+@media (max-width:700px){.tk{flex-wrap:wrap}.heardc{flex-basis:100%;order:9}.dir2{grid-template-columns:1fr 1fr}.dir2 textarea,.dir2 .say{grid-column:1/3}}
+.cands{margin-top:6px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.cl{display:flex;align-items:center;gap:10px;padding:6px 10px;border-top:1px solid var(--line)}.cl:first-child{border-top:0}.cl:hover{background:#1c2029}
+.cn{font-weight:600;min-width:92px}.from{font-size:12px;color:var(--cloud);border:1px solid #4b3a63;border-radius:99px;padding:0 8px;cursor:help}
+.cb{display:flex;align-items:center;gap:4px;margin-left:auto}
+.play{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 4px;border-radius:99px;font-size:12px;color:var(--fg);background:#232836;border:1px solid var(--line)}
+.play i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10px;background:#0f1115}
+.play.solo{padding:0 4px}.play.on{border-color:var(--acc);color:var(--acc)}
+button.retry{padding:2px 9px;font-size:14px;color:var(--dim)}button.retry.changed{color:var(--acc);border-color:var(--acc)}
+button.ghost{border-style:dashed;color:var(--dim);font-size:12px}button.mini,button.x{padding:2px 8px;color:var(--dim)}button.x:hover{color:var(--bad);border-color:var(--bad)}
+select.act{font-size:12px;padding:4px 6px;color:var(--dim);max-width:150px}select.act:hover{color:var(--fg);border-color:var(--acc)}
+.refs{display:flex;gap:8px;flex-wrap:wrap}.ref{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--dim);border:1px solid var(--line);border-radius:99px;padding:2px 4px 2px 2px}
+.ref .x{padding:0 6px;border:0;background:none;font-size:12px}.ref.ask{border-color:var(--bad);color:var(--fg);padding:3px 4px 3px 10px}button.danger{border-color:var(--bad);color:var(--bad)}button.danger:hover{background:#3a1d1d}
+.tref{font-size:11px;color:var(--dim)}select.rs{font-size:12px;max-width:190px}
+.uses{font-size:12px;color:var(--ok);border:1px solid #2c5a3f;border-radius:99px;padding:0 8px;cursor:help;white-space:nowrap}
+.rsty{font-size:12px;color:var(--cloud);border:1px dashed #4b3a63;border-radius:99px;padding:0 8px;cursor:help;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl button,.cl .play{white-space:nowrap}
+.rsrc{font-size:11px;color:var(--dim);cursor:pointer;text-decoration:underline dotted}.rsrc:hover{color:var(--acc)}
+.wb{font-size:11px;color:var(--warn);white-space:nowrap;cursor:help}
+button.rst{font-size:12px;padding:2px 8px;color:var(--dim)}button.rst:hover{color:var(--acc);border-color:var(--acc)}
+.ref button.rst{border:0;background:none;padding:0 4px}
+.rform{margin:8px 0;padding:10px;border:1px solid var(--acc);border-radius:8px;background:#141a24;display:grid;gap:8px}
+.rform .row{flex-wrap:wrap}.rform input{flex:1;min-width:240px}.rform textarea{width:100%;min-height:38px}
+.preset{font-size:12px;padding:1px 8px;border-radius:99px;color:var(--dim)}.preset:hover{color:var(--acc);border-color:var(--acc)}
+.cl.hl{background:#1f3326;transition:background 1.5s}
+.acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:4px 10px 8px 46px}.acts button{font-size:12px;padding:3px 9px}
+.lform{margin:4px 10px 10px 46px;padding:10px;border:1px solid var(--acc);border-radius:8px;background:#141a24;display:grid;gap:8px}
+.lform .row{flex-wrap:wrap;gap:8px}.lform textarea{width:100%;min-height:52px}.lform select{max-width:100%}
+.lform .eng{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}.lform .eng label{display:flex;gap:6px;align-items:center}
+.lform .off{color:var(--dim)}.lform .why{font-size:12px;color:var(--warn)}
+.how{color:var(--cloud);font-size:12px}
+/* the Cast tab: the cast list, one voice, its palette of references, quiet candidate rows */
+main#cast{max-width:1280px}.cast2{display:grid;grid-template-columns:232px 1fr;gap:18px;align-items:start}
+.clist{position:sticky;top:64px;max-height:calc(100vh - 76px);overflow:auto;display:flex;flex-direction:column;gap:2px;padding:4px 4px 12px 0}
+button.cv{display:grid;grid-template-columns:1fr auto;gap:1px 8px;text-align:left;padding:7px 10px;border-radius:8px;border:1px solid transparent;background:none;width:100%}
+button.cv:hover{background:#1a1e27;border-color:transparent}button.cv.on{background:#18222e;border-color:#2b4a63}
+.cv b{font-weight:600;font-size:14px}.cv .cvs{grid-column:1/3;font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cv .cvp{font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.dots{grid-column:1/3;display:flex;gap:3px;margin-top:4px}.dots i{width:7px;height:7px;border-radius:50%;background:#262c37}.dots i.on{background:#3f9a68}
+.cnav{margin-top:8px;border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:2px}
+.cdetail{min-width:0}.vhead{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.vhead .vn{font-size:22px;font-weight:650;letter-spacing:.01em}
+.lnk{font-size:12px;color:var(--acc);text-decoration:none}.lnk:hover{text-decoration:underline}
+.vdesc{color:var(--dim);font-size:13px;margin:4px 0 2px;max-width:900px}.xai{margin-bottom:8px}
+.sec{margin-top:18px}.sec>h3,.vset>summary{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#aeb6c8;margin:0 0 8px;font-weight:650;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.vset>summary{cursor:pointer;list-style:none}.vset>summary::before{content:'▸';margin-right:2px}.vset[open]>summary::before{content:'▾'}
+.h3n{font-size:12px;letter-spacing:0;text-transform:none;color:var(--dim);font-weight:400}.sec .sp{flex:1}
+.pal{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tile{position:relative;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:#141820;display:flex;flex-direction:column;gap:3px;min-height:58px}
+.tile .tn{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px}.tile .tcnt{margin-left:auto;font-size:11px;font-weight:400;color:#6f788c}.cr button{flex:none;white-space:nowrap}
+.tile .tr{display:flex;align-items:center;gap:6px;min-height:22px}.tile .ts{font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tile .ta{margin-left:auto;display:flex;gap:2px;visibility:hidden}.tile:hover .ta,.tile:focus-within .ta,.tile.on .ta{visibility:visible}
+.tile .ta button{padding:1px 7px;font-size:12px}.tile.on{border-color:var(--acc)}
+.tile.empty{border-style:dashed;background:none;color:var(--dim)}.tile.empty .tn{font-weight:500}.tile.empty button{margin-left:auto;font-size:12px;padding:2px 8px}
+.segs{display:inline-flex;gap:2px;margin-left:6px}button.seg{font-size:11.5px;padding:1px 8px;border-radius:99px;color:var(--dim);letter-spacing:0;text-transform:none;font-weight:400}button.seg.on{color:var(--acc);border-color:var(--acc)}
+.sec>h3 select,.sec>h3 button{letter-spacing:0;text-transform:none;font-weight:400}
+.cands2{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.cr{display:flex;align-items:center;gap:10px;padding:6px 10px;border-top:1px solid var(--line);cursor:pointer;min-height:42px}.cands2>.cr:first-child{border-top:0}
+.cr:hover{background:#181c25}.cr.on{background:#18222e;box-shadow:inset 3px 0 0 var(--acc)}.cr.hl{background:#1f3326;transition:background 1.5s}
+.cr .cn{font-weight:650;min-width:38px;font-variant-numeric:tabular-nums}.cdesc{display:flex;gap:8px;align-items:center;min-width:0;overflow:hidden;white-space:nowrap}
+.cr .sp{flex:1}.dsg{font-size:12px;color:var(--dim)}.mir{font-size:12px;color:#8fd3c4;overflow:hidden;text-overflow:ellipsis}
+.cr .rsty{border:0;padding:0;max-width:340px}.rrd{font-size:12px;color:#c9b27a;overflow:hidden;text-overflow:ellipsis}.said{font-size:12px;color:#7d8699;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.olduse{font-size:11.5px;color:#7d8699;border:1px dashed #33503f;border-radius:99px;padding:0 7px;white-space:nowrap}
+.clist{scrollbar-width:thin;scrollbar-color:#2a3140 transparent}.cr .from{font-size:11.5px}
+.new{font-size:10.5px;color:#0f1115;background:var(--warn);border-radius:99px;padding:0 6px;font-weight:700}
+button.usebtn{font-size:12px;padding:3px 10px;color:var(--fg)}button.usebtn.t{border-color:var(--acc);color:var(--acc)}
+.cform{margin:0;padding:10px 12px 12px 54px;border-top:1px dashed var(--line);background:#121820;display:grid;gap:8px}
+.sec>.cform{border:1px solid var(--acc);border-radius:10px;margin-top:8px;padding:10px 12px}
+.cform .row{flex-wrap:wrap;gap:8px}.cform textarea{width:100%;min-height:46px}.cform select{max-width:100%}
+.cform .eng{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}.cform .eng label{display:flex;gap:6px;align-items:center}.cform .off{color:var(--dim)}.cform .why{font-size:12px;color:var(--warn)}
+.cform .confirm{background:#1b2230;border-radius:8px;padding:8px 10px;font-size:13px}.preset.nw{border-style:dashed}
+.acts2{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.acts2 button{font-size:12.5px}.acts2 button .src{font-size:11.5px}
+button.changed{border-color:var(--acc);color:var(--acc)}
+.why.first{color:var(--warn);font-size:13px;margin:0 0 8px}
+.mk{font-size:11px;border-radius:99px;padding:0 6px;margin-left:4px}.mk.work{color:var(--acc)}.mk.nw{color:#0f1115;background:var(--warn);font-weight:700}.mk.warn{color:var(--warn)}
+textarea.vdesc{display:block;width:100%;max-width:980px;border-color:transparent;background:none;color:var(--dim);font-size:13px;padding:4px 6px;margin:4px 0 2px -6px;resize:vertical;min-height:0}
+textarea.vdesc:hover,textarea.vdesc:focus{border-color:var(--line);background:var(--card);color:var(--fg)}
+.reads{display:flex;gap:8px;align-items:flex-start;margin:-2px 0 8px}.reads textarea{flex:1;min-height:30px;font-size:12.5px}
+.behind{font-size:12px;color:var(--dim);margin-top:8px}a.pill{text-decoration:none}a.pill:hover{border-color:var(--acc)}.vj{border:1px solid #2b4a63;background:#132030;border-radius:8px;padding:6px 10px;margin-top:10px;font-size:12.5px;display:grid;gap:3px}.vj .spin{display:inline-block;margin-right:4px}
+@media (max-width:1000px){.pal{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){.pal{grid-template-columns:repeat(2,minmax(0,1fr))}.cast2{grid-template-columns:1fr}.clist{position:static;max-height:none;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px}.clist button.cv{width:auto;flex:none}.clist .dots,.clist .cvs{display:none}.cnav{flex-direction:row;flex-wrap:nowrap;border:0;margin:0;padding:0}
+ .cform{padding-left:12px}.cr{flex-wrap:wrap}.cdesc{white-space:normal}}.preset.on{color:var(--acc);border-color:var(--acc)}.tnm{color:#a3abbd}button.more{font-weight:700;letter-spacing:1px}
+@media (max-width:700px){.cl{flex-wrap:wrap}.cb{margin-left:0}}
+.chip{font-size:12px;background:#232836;border-radius:99px;padding:1px 8px;color:var(--dim)}
+.saved{font-size:12px;color:var(--ok);opacity:0;transition:opacity .4s}.saved.show{opacity:1}
+.warn{color:var(--warn);font-size:12px}.old{font-size:11px;color:var(--warn);border:1px solid #6b5326;border-radius:99px;padding:0 6px;white-space:nowrap}
+.pend{font-size:12px;color:var(--warn)}#game{font-size:13px;display:flex;gap:8px;align-items:center}.wedit{display:flex;gap:8px;align-items:flex-start;margin:6px 0}.wedit textarea{flex:1;font-size:15px;min-height:60px;border-color:var(--acc)}
+.text .ew{font-size:12px;margin-left:8px;padding:1px 8px;vertical-align:middle}.err{color:var(--bad);font-size:13px}
+table.spk{border-collapse:collapse;width:100%}table.spk td{padding:3px 8px;border-top:1px solid var(--line)}
+#jobs{position:fixed;right:12px;bottom:12px;width:min(560px,calc(100vw - 24px));background:#12151bf2;border:1px solid var(--line);border-radius:10px;z-index:4;font-size:13px}
+#jobs .jh{padding:8px 12px;cursor:pointer;display:flex;gap:8px;align-items:center}#jobs .jb{padding:0 12px 10px;display:none}
+#jobs.open .jb{display:block}#jobs pre{margin:6px 0 0;max-height:240px;overflow:auto;background:#0b0d11;padding:6px 8px;border-radius:6px;font-size:11.5px;white-space:pre-wrap;color:#b8c0d0}
+.spin{width:9px;height:9px;border-radius:50%;background:var(--acc);animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.25}}
+.jq{display:flex;gap:8px;align-items:center;color:var(--dim)}
+@media (max-width:700px){.take{grid-template-columns:20px 1fr auto auto}.take .src{display:none}.dir{grid-template-columns:1fr}.dir .wide{grid-column:1}.vgrid{grid-template-columns:1fr}}
+/* the Timeline tab: a group's lines on the player's clock, and what is happening around them */
+main#timeline{max-width:1180px}
+.tlhead{margin:4px 0 6px}.tltitle{font-size:20px;font-weight:650}.tlsum{font-size:12.5px;color:var(--dim);margin-top:2px}
+.tlnote{font-size:12.5px;color:var(--warn);margin-top:4px}
+.tlmap{position:relative;height:100px;background:#12151b;border:1px solid var(--line);border-radius:10px;margin:8px 0 4px;cursor:pointer;overflow:hidden;user-select:none}
+.tlmap .tick{position:absolute;top:0;bottom:0;border-left:1px solid #1d222c}.tlmap .tick span{position:absolute;top:1px;left:3px;font-size:10.5px;color:#5d667a;font-variant-numeric:tabular-nums}
+.tlmap .lb{position:absolute;top:20px;height:16px;border-radius:3px;min-width:3px}.tlmap .lb.est{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent 0 3px,#0f111588 3px 5px)}
+.tlmap .lb.gone{top:24px;height:8px;width:3px;background:var(--bad)!important;opacity:.7}
+.tlmap .em{position:absolute;top:42px;width:3px;height:12px;border-radius:1px}.tlmap .hz{position:absolute;top:45px;height:6px;background:#3a4256;border-radius:3px}
+.tlmap .km{position:absolute;bottom:2px;width:2px;height:8px;background:#ff9e6b}.tlmap .km.lost{height:30px;background:#ff4d4d;width:3px}
+.tlmap svg{position:absolute;left:0;bottom:0;width:100%;height:36px}
+.tlmap .cur{position:absolute;top:0;bottom:0;width:2px;background:var(--acc);display:none;pointer-events:none}
+.tlleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--dim);margin:2px 0 10px}.tlleg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.tlrow{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:start}
+.tt{font-variant-numeric:tabular-nums;color:var(--dim);font-size:12px;text-align:right;padding-top:9px}.tlrow.ev .tt{padding-top:3px}
+.tlln{border-left:3px solid var(--c);background:var(--card);border-radius:8px;padding:7px 10px;margin:3px 0;min-width:0}
+.tlln.chat{opacity:.72;background:#14171e}.tlln.gone{opacity:.55}.tlln.now{outline:2px solid var(--acc);background:#18222e}.tlrow.hl .tlln,.tlrow.hl .tlev{background:#1f3326;transition:background 1.5s}
+.tlh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.tlh .spk{color:var(--c);font-weight:650}.tlh .sp{flex:1}
+.tlw{font-size:15px;margin:3px 0 2px}.tlw .ew{font-size:12px;margin-left:8px;padding:1px 8px;vertical-align:middle}
+.tlsub{font-size:12px;color:var(--dim);display:flex;gap:2px 14px;flex-wrap:wrap}.tlsub .fx{color:#d99a9a}
+.tlsub .dn{color:#a3abbd;font-style:italic;flex-basis:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.flag{font-size:11px;color:var(--warn);border:1px solid #6b5326;border-radius:99px;padding:0 7px;white-space:nowrap;cursor:help}
+.tdur{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;cursor:help}
+.tlev{font-size:12.5px;color:var(--dim);padding:2px 10px;display:flex;gap:8px;align-items:baseline;border-radius:6px;min-width:0}.tlev>span:last-child{min-width:0}
+.ek{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:650;border-radius:4px;padding:0 5px;white-space:nowrap}
+.ek.hint{color:#f2e35c;background:#2f2c14}.ek.request{color:var(--cloud);background:#2a2138}.ek.wave{color:#ff8a8a;background:#3a1d1d}.ek.objective{color:var(--ok);background:#173325}
+.ek.failed{color:var(--bad);background:#3a1d1d}.ek.kill{color:#ff9e6b;background:#33241a}.ek.loss{color:#fff;background:#8a2a2a}.ek.hurry{color:#9fb4ff;background:#1c2338}.ek.end{color:var(--fg);background:#2a2f3c}
+.tlgap{font-size:11px;color:#56607a;padding-left:62px;display:flex;align-items:center;font-variant-numeric:tabular-nums}
+.tlx{border:1px dashed #2b3445;border-radius:10px;padding:0 8px 4px 0;margin:8px 0}.tlxh{font-size:11.5px;color:#7d8699;padding:5px 0 0 62px}
+.tlunf{margin-top:18px;font-size:12.5px;color:var(--dim)}.tlunf div{margin:3px 0}
+.scene{position:sticky;top:var(--hh,58px);z-index:2;background:#132030;border:1px solid #2b4a63;border-radius:8px;padding:6px 10px;margin:6px 0;display:flex;gap:10px;align-items:center;font-size:13px}
+#tf{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}#tf label{font-size:12px;color:var(--dim);display:inline-flex;gap:4px;align-items:center}
+@media (max-width:700px){.tlrow{grid-template-columns:38px 1fr;gap:6px}.tlgap,.tlxh{padding-left:44px}}
+</style></head><body>
+<header><b>Verbaline For Games</b>
+<span class="tabs"><button id="tLines" onclick="setTab('lines')">Lines</button> <button id="tCast" onclick="setTab('cast')">Cast</button> <button id="tTime" onclick="setTab('timeline')" title="When each line of a group plays, and what is happening around it (projects with a timeline hook)">Timeline</button></span>
+<span id="lf"><select id="voice"><option value="">all voices</option></select>
+<select id="group"><option value="">all groups</option></select>
+<select id="show"><option value="todo">needs a pick</option><option value="all">everything</option><option value="picked">picked</option><option value="regen">flagged for new takes</option><option value="tweak">has prompts</option><option value="pending">words not in game yet</option><option value="old">has old-word takes</option><option value="drift" title="Picked takes cloned from a reference since replaced, or whose voice match to their reference is under 50">picks in an older voice</option></select>
+<input id="q" placeholder="search text" size="14">
+<select id="mic" title="The microphone ● Record uses"><option value="">default mic</option></select></span>
+<span id="tf" hidden></span><span class="count" id="count"></span><span id="bulk"></span><span id="game"></span></header>
+<main id="lines"></main><main id="cast" hidden></main><main id="timeline" hidden></main>
+<div id="jobs"><div class="jh" onclick="this.parentNode.classList.toggle('open')"><span id="jdot"></span><span id="jsum">No jobs</span></div><div class="jb" id="jbody"></div></div>
+<datalist id="xaiv"></datalist>
+<script>
+let S=[],C=null,J={},tab='lines',sel=0,editing=null,lastDone=null,CV=null,GEN={};const opened=new Set();   // CV: the cast member the Cast tab shows
+const $=id=>document.getElementById(id);
+// The emotions in one order everywhere (the palette, the presets, the pickers, the line's menu): everyday, heat, hurt
+// and hush. Any emotion the server adds and this list lacks goes at the end.
+const ORDER=['neutral','calm','warm','playful','urgent','shouting','angry','vengeful','whisper','sad','crying','stunned'];
+const EMO=()=>[...ORDER.filter(e=>C.emotions.includes(e)),...C.emotions.filter(e=>!ORDER.includes(e))];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct=x=>x==null?'–':Math.round(x*100);
+try{tab=localStorage.getItem('vs_tab')||'lines'}catch(e){}
+async function api(u,b){const r=await fetch(u,b===undefined?{}:{method:'POST',body:JSON.stringify(b)});const j=await r.json();if(!r.ok||j.error){flash(j.error||'failed');throw new Error(j.error)}return j}
+function flash(msg){let e=$('toast');if(e){e.style.background='#3a1d1d';e.style.borderColor='var(--bad)'}if(!e){e=document.createElement('div');e.id='toast';e.style.cssText='position:fixed;left:50%;top:60px;transform:translateX(-50%);background:#3a1d1d;border:1px solid var(--bad);color:#fff;padding:8px 14px;border-radius:8px;z-index:9';document.body.appendChild(e)}
+ e.textContent=msg;e.hidden=false;clearTimeout(e.t);e.t=setTimeout(()=>e.hidden=true,6000)}
+async function loadAll(){[S,C]=await Promise.all([api('/api/state'),api('/api/cast')]);fill();draw()}
+function fill(){const vs=C.voices.map(v=>v.id),gt={};(C.groups||[]).forEach(g=>gt[g.id]=g.title);const ms=[...new Set(S.map(l=>l.group))];
+ const keep=(id,opts,first)=>{const s=$(id),v=s.value;s.innerHTML=`<option value="">${first}</option>`+opts.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('');s.value=v};
+ keep('voice',vs.map(v=>[v,v]),'all voices');keep('group',ms.map(m=>[m,gt[m]||m||'(no group)']),'all groups');$('group').style.display=ms.length>1?'':'none';
+ $('xaiv').innerHTML=C.xai_voices.map(v=>`<option value="${v}">`).join('')}
+function setTab(t){tab=t;try{localStorage.setItem('vs_tab',t)}catch(e){}try{history.replaceState(null,'',t=='cast'&&CV?'#cast/'+CV:t=='timeline'&&TL.g?'#timeline/'+encodeURIComponent(TL.g):'#'+t)}catch(e){}draw();if(t=='timeline')loadTimeline()}
+function draw(){
+ // Keep the field being typed in (and its unsaved text) across redraws.
+ const a=document.activeElement,free=a&&['INPUT','TEXTAREA'].includes(a.tagName)&&!a.closest('[data-card]')&&(a.id||a.dataset.pron!==undefined)?{id:a.id,pron:a.dataset.pron,v:a.value,s:a.selectionStart,e:a.selectionEnd}:null,keepF=a&&(a.dataset.f||a.dataset.pf||['tw','wd','lf','cfs','cft','pe'].includes(a.id))?{card:a.closest('[data-card]')?.dataset.card,f:a.dataset.f||a.dataset.pf||a.id,v:a.value,s:a.selectionStart,e:a.selectionEnd}:null;
+ $('tLines').classList.toggle('on',tab=='lines');$('tCast').classList.toggle('on',tab=='cast');$('tTime').classList.toggle('on',tab=='timeline');$('lf').hidden=tab!='lines';$('tf').hidden=tab!='timeline';
+ $('lines').hidden=tab!='lines';$('cast').hidden=tab!='cast';$('timeline').hidden=tab!='timeline';
+ if(tab=='lines')drawLines();else if(tab=='cast'){drawCast();$('bulk').innerHTML=''}else{drawTimeline();$('bulk').innerHTML=''}
+ if(keepF){const card=document.querySelector(`[data-card="${CSS.escape(keepF.card||'')}"]`);const el=card&&(['tw','wd','lf','cfs','cft','pe'].includes(keepF.f)?card.querySelector('#'+keepF.f):card.querySelector(`[data-f="${keepF.f}"],[data-pf="${keepF.f}"]`));
+  if(el){el.value=keepF.v;el.focus();try{el.setSelectionRange(keepF.s,keepF.e)}catch(e){}}}
+ if(free){const el=free.id?$(free.id):document.querySelector(`[data-pron="${CSS.escape(free.pron)}"]`);if(el){el.value=free.v;el.focus();try{el.setSelectionRange(free.s,free.e)}catch(e){}}}
+ paint()}
+
+// ------------------------------------------------------------------ Lines
+function shown(){const v=$('voice').value,m=$('group').value,s=$('show').value,q=$('q').value.toLowerCase();
+ return S.filter(l=>(!v||l.voice==v)&&(!m||String(l.group)==m)&&(!q||l.text.toLowerCase().includes(q)||l.note.toLowerCase().includes(q))&&
+  (s=='all'||(s=='todo'&&!l.pick)||(s=='picked'&&l.pick)||(s=='regen'&&l.regen)||(s=='tweak'&&l.tweaks)||(s=='pending'&&l.pending)||(s=='old'&&l.takes.some(t=>t.old))||(s=='drift'&&drift(l))))}
+// A pick whose voice no longer matches its reference (a voice's references were replaced after picks were cloned from
+// them): offered to ⇄ Mirror into today's voice.
+function drift(l){const t=l.pick&&l.takes.find(x=>x.path==l.pick);return t&&(l.pick_older||t.voice!=null&&t.voice<.5)&&!(t.source||'').startsWith('you')?t:null}
+// A take's checks, not a ranking: of 113 lines a director picked, the top score was the pick 12% of the time, below
+// a random pick's 18%, and the top scores were too dry. The scorer catches defects: words wrong or stray words at the
+// ends, a voice that drifted, rough (warbly) audio. Your own recordings are conversions by nature: no voice or audio flags.
+function checks(t){if(t.total==null)return[];const you=(t.source||'').startsWith('you');
+ return [...(t.total===0?['words']:[]),...(t.edges?['ends']:[]),...(!you&&t.voice!=null&&t.voice<.5?['voice?']:[]),...(!you&&t.quality!=null&&t.quality<.7?['rough']:[])]}
+function checksTip(t,l){if(t.total==null)return 'Not scored yet';const f=checks(t);
+ const why={words:'the words are too far from the script',ends:'extra or wrong words at the start or end',
+  'voice?':`it drifts from ${l.voice}'s ${t.ref||''} reference`,rough:'rough audio, likely warble (a conversion: ✦ Restyle reads them cleanly now)'};
+ return `Checks, not a ranking: words ${pct(t.wer==null?null:1-t.wer)} · voice match ${pct(t.voice)} · audio ${pct(t.quality)}.${f.length?' '+f.map(x=>x+': '+why[x]).join('; ')+'.':' Nothing wrong found.'} They can't hear acting, so the newest takes come first.`}
+const engLabel=id=>{const e=C.engines.find(x=>x.id==id);return e?e.label+(e.cloud?' · cloud':' · local'):id};
+function drawLines(){drawGame();drawBulk();const L=shown();$('count').textContent=L.length+' lines · '+S.filter(l=>l.pick).length+'/'+S.length+' picked';
+ $('lines').innerHTML=L.map((l,i)=>{const top=l.takes.slice(0,3),rest=l.takes.slice(3);
+  const ed=(mode,t)=>editing&&editing.mode==mode&&editing.key==l.key&&editing.path==t.path;
+  const vr=(C.voices.find(x=>x.id==l.voice)||{refs:[]}).refs.map(r=>r.emotion);
+  const row=(t,n)=>{const picked=l.pick==t.path,off=(t.wer!=null&&t.wer>0||t.edges)&&!t.old,f=checks(t),cls=t.total==null?'':t.total==0?'bad':f.length?'warn':'good';
+   return `<div class="tk ${picked?'on':''}">${play(t.path)}<span class="tnum">${n}</span>
+    <span class="tsrc"><span class="tnm">${esc(t.name.replace(/\.wav$/,''))}</span> · ${esc(t.source)}${t.ref&&!t.how?` · <span title="Cloned from ${esc(l.voice)}'s ${t.ref} reference">${esc(t.ref)} ref</span>`:''}</span>
+    ${t.old?`<span class="old" title="Made from: “${esc(t.old)}”">old words</span>`:''}
+    <span class="heardc">${off&&t.heard?`<span title="What Whisper heard (the script says: “${esc(l.text)}”)">heard “${esc(t.heard)}”</span>`:''}</span>
+    <span class="score ${cls}" title="${checksTip(t,l)}">${t.total==null?'–':f.length?f.join(' · '):'✓'}</span>
+    <button class="pk ${picked?'p':''}" onclick="pick('${l.key}','${picked?'':t.path}')" title="${picked?'Click to clear the pick':'The take that ships'}">${picked?'✓ Picked':'Pick'}</button>
+    <button class="mini more ${ACT&&ACT.path==t.path||editing&&editing.path==t.path?'t':''}" title="More for this take: prompt, ✦ restyle, ⇄ mirror, make it a reference" onclick="takeActs('${l.key}','${t.path}')">⋯</button></div>
+    ${ACT&&ACT.key==l.key&&ACT.path==t.path&&!(editing&&editing.path==t.path)?`<div class="acts"><span class="src">take ${n} · ${esc(t.name.replace(/\.wav$/,''))}:</span>
+      <button onclick="edit('tweak','${l.key}','${t.path}')" title="What to change in the next takes, starting from this one">✎ Prompt</button>
+      <button onclick="lineForm('restyle','${l.key}','${t.path}')" title="The same voice in a new delivery: this take read again (shouting, whispering, crying, vengeful…), as new takes">✦ Restyle</button>
+      <button onclick="lineForm('mirror','${l.key}','${t.path}')" title="The same delivery in another voice: this take's timing and intonation re-voiced into a reference or candidate, as new takes">⇄ Mirror</button>
+      <button onclick="lineForm('beat','${l.key}','${t.path}')" title="This take with a pause put in, after each sentence or after a word you choose, as a new take">⏸ Add a beat</button>
+      ${t.how&&t.how.kind=='parts'&&l.parts.length?`<button onclick="mixFrom('${l.key}','${t.path}')" title="Choose this take's try of every part in the parts panel above: then swap just the part you want and Join">✂ Use its parts</button>`:''}
+      <button onclick="edit('ref','${l.key}','${t.path}')" title="Make this take a character's reference clip">★ Make a reference</button>
+      <button class="x" onclick="ACT=null;draw()" title="Close">✕</button></div>`:''}
+    ${ed('tweak',t)?`<div class="ed2"><textarea id="tw" placeholder="Keep this read, but… (e.g. faster; more fear on 'Nobody'; drop the pause after 'gone')">${esc(t.tweak)}</textarea>
+      <button class="t" onclick="saveTweak('${l.key}','${t.path}')">save</button><button onclick="editing=null;draw()">cancel</button>${t.tweak?`<button onclick="tweak('${l.key}','${t.path}','')">delete</button>`:''}</div>`
+     :ed('ref',t)?refEditHtml(l,t)
+     :ed('restyle',t)||ed('mirror',t)||ed('beat',t)?lineFormHtml(l,t)
+     :(t.tweak?`<div class="tw2">✎ ${esc(t.tweak)}</div>`:'')}${t.how&&!ed('restyle',t)&&!ed('mirror',t)&&!ed('beat',t)?`<div class="tw2 how">${howLabel(t.how)}</div>`:''}`};
+  const vopts=C.voices.map(v=>`<option value="${v.id}" ${v.id==l.voice?'selected':''}>${v.id}${v.id==l.voice_default?' (speaker\'s)':''}</option>`).join('');
+  const eopts=EMO().map(e=>`<option ${e==l.emotion?'selected':''}>${e}</option>`).join('');
+  const auto=l.ref_auto||l.emotion;
+  const engSel=`<select class="es" data-f="engine" title="Which engine makes this line's takes (saved with the line; the voice's own is set on the Cast tab)" onchange="engPick(this)"><option value="" data-cloud="${(C.engines.find(e=>e.id==l.voice_engine)||{}).cloud?1:0}">${esc(engLabel(l.voice_engine))} (voice's)</option>${C.engines.filter(e=>e.id!=l.voice_engine).map(e=>`<option value="${e.id}" data-cloud="${e.cloud?1:0}" ${e.id==l.engine_line?'selected':''}>${esc(e.label)}${e.cloud?' · cloud, paid':' · local'}</option>`).join('')}</select>`;
+  const G=GEN[l.key]||{};
+  const refSel=vr.length?`<select class="rs" onchange="(GEN['${l.key}']=GEN['${l.key}']||{}).ref=this.value" title="Which of ${esc(l.voice)}'s reference clips to clone (local engines). Auto: the line's emotion if there's one, else neutral, calm or its nearest kin."><option value="">reference: auto (${auto})</option>${EMO().filter(e=>vr.includes(e)).map(e=>`<option value="${e}" ${G.ref==e?'selected':''}>reference: ${e}</option>`).join('')}</select>`:'';
+  return `<div class="card ${i==sel?'sel':''}" id="L${i}" data-card="${l.key}" onclick="sel=${i};mark()">
+   <div class="head"><span class="who">${esc(l.speaker)}</span><span class="pill">${l.emotion}</span><a class="pill ${l.cloud?'cloud':'local'}" href="#cast/${esc(l.voice)}" onclick="event.stopPropagation();CV='${esc(l.voice)}';setTab('cast');return false" title="Open ${esc(l.voice)} on the Cast tab">${esc(l.voice)} · ${esc(engLabel(l.engine))}</a>
+   <span class="ids">${l.ids.join(', ')}</span>${l.kind?`<span class="pill" title="The project's kind of line">${esc(l.kind)}</span>`:''}${tlGroups().some(g=>String(g.id)==String(l.group))?`<a class="lnk" href="#timeline/${encodeURIComponent(l.group)}/${esc(l.key)}" onclick="event.stopPropagation()" title="When it plays in ${esc(groupTitle(l.group))}, and what is happening around it (the Timeline tab)">⏱ when it plays</a>`:''}${l.pick?'<span class="picked">✓ picked</span>':''}${l.tweaks?`<span class="badge">✎ ${l.tweaks} prompt${l.tweaks>1?'s':''}</span>`:''}${l.regen?'<span class="badge" style="color:var(--warn)">flagged for new takes</span>':''}<span class="saved"></span></div>
+   ${editing&&editing.mode=='words'&&editing.key==l.key?`<div class="wedit"><textarea id="wd">${esc(l.text)}</textarea><div style="display:flex;flex-direction:column;gap:6px">
+     <button class="t" onclick="saveWords('${l.key}')">save</button><button onclick="editing=null;draw()">cancel</button></div></div>
+     <div class="src">${esc(l.speaker)} says it (speakers are set in the project's lines). Saves where the project keeps its words; ${esc(C.apply_label)} puts them in the game.${l.ids.length>1?` Also changes ${l.ids.slice(1).join(', ')}, which share this recording.`:''}</div>`
+   :`<div class="text">“${esc(l.text)}”<button class="ew" onclick="editWords('${l.key}')" title="Rewrite this line's words">✎ edit words</button></div>`}
+   ${l.context?`<div class="src" title="The project's context for this line">${esc(l.context)}</div>`:''}
+   ${l.pending?`<div class="pend" title="${l.game_text?'The game says: “'+esc(l.game_text)+'”':''}">Not in the game yet: ${esc(C.apply_label)} puts these words in the game.</div>`:''}
+   ${l.pick&&l.takes.some(t=>t.path==l.pick&&t.old)?'<div class="pend">The picked take says the old words: generate new takes or pick one of the new words.</div>':''}
+   ${drift(l)?`<div class="pend">${l.pick_older?`The pick was cloned from ${esc(l.voice)}'s ${esc(l.pick_older.emotion)} reference before it was replaced (${esc(l.pick_older.replaced)}): an older voice.`:`The pick's voice matches ${esc(l.voice)}'s ${esc(drift(l).ref||'')} reference only ${pct(drift(l).voice)}/100.`} <button class="mini" onclick="event.stopPropagation();lineForm('mirror','${l.key}','${drift(l).path}')" title="Its delivery, in ${esc(l.voice)}'s voice today (Seed-VC), as new takes">⇄ Mirror it into today's voice</button></div>`:''}
+   <div class="dir2"><select data-f="voice" title="Who voices this line">${vopts}</select><select data-f="emotion" title="How it's played">${eopts}</select>
+    <textarea data-f="note" rows="1" placeholder="Directing notes: what's happening, how it should land…">${esc(l.note)}</textarea>
+    <label class="say" title="What text-to-speech reads instead of the words above, for this line only: respell a name the way it should sound (Matayus Kanica), or add xAI tags. The game's subtitles keep the words above. For a word in every line, use Pronunciations on the Cast tab.">say it as <input data-f="say" value="${esc(l.say)}" ${l.parts.length?'disabled title="This line is in parts: the engine reads the parts\' words (✂ edit parts). Pronunciations still apply."':''} placeholder="${l.parts.length?'in parts: the engine reads the parts (✂ below)':'only if it should sound different from the words: e.g. Matayus Kanica (subtitles keep the words)'}"></label></div>
+   ${partsHtml(l)}
+   <div class="genbar"><select class="gn" onchange="(GEN['${l.key}']=GEN['${l.key}']||{}).n=this.value" title="How many takes">${[2,4,8].map(n=>`<option ${n==(+G.n||4)?'selected':''} value="${n}">${n} takes</option>`).join('')}</select>${engSel}${l.parts.length?'':refSel}
+    <button class="${l.cloud?'cl':'go'} genb" onclick="genLine(this,'${l.key}','${l.voice}')" ${l.parts.length?`title="${l.parts.length} parts: this many tries of every part, each in its tone, joined into this many takes"`:''}>Generate</button>
+    ${!l.parts.length&&!(PE&&PE.key==l.key)?`<button class="rst" onclick="event.stopPropagation();partsEdit('${l.key}')" title="Split this line into parts, each in its own tone: [urgent]What do you mean they're gone?![/][sad]Oh my god…[/]. Each part is made on its own, then they're joined into one take.">✂ Split into tones</button>`:''}
+    ${vr.length?`<button class="rst" onclick="lineForm('restyle','${l.key}','')" title="Act this line in a new delivery, in ${esc(l.voice)}'s voice: from its reference, directed by the emotion and your notes (local)">✦ Restyle</button>`:''}
+    ${vr.length?'':'<span class="why">No reference yet: local engines need one (Cast tab).</span>'}
+    ${vr.length&&l.ref_auto&&l.ref_auto!=l.emotion&&!l.cloud&&!l.parts.length?`<span class="why" title="${esc(l.voice)} has no ${l.emotion} reference, so its local takes clone the ${l.ref_auto} one. Make one on the Cast tab (+ make it), or choose another reference here.">no ${l.emotion} reference: auto uses ${l.ref_auto}</span>`:''}
+    <span class="sp"></span><button class="ghost" onclick="regen('${l.key}',${!l.regen})">${l.regen?'✓ flagged: new takes':'none good'}</button></div>
+   ${editing&&editing.key==l.key&&editing.path===''&&editing.mode=='restyle'?lineFormHtml(l,null):''}
+   <div class="perf">${recBtn(l)}
+    ${l.performances.length?`<span>your recordings:</span>${l.performances.map(p=>`<span class="ptk">${play(p.path,p.n)}<button class="x" title="Delete this recording and its conversions (kept in removed/; a picked one stays)" onclick="delPerf('${l.key}','${esc(p.path)}')">✕</button></span>`).join('')}
+     <button class="ghost" onclick="convertLine(this,'${l.key}','${l.voice}')" title="Convert every recording of this line again, into the reference chosen above (Seed-VC)">convert again</button>`
+     :`<span>Act it yourself: your timing and delivery, re-voiced as ${esc(l.voice)} (Seed-VC).</span>`}
+    <label class="src" title="Each recording makes two takes. &quot;clone&quot;: ${esc(l.voice)}'s own sound and pitch, your timing and a looser read of your intonation. &quot;pitch&quot;: your intonation note for note, moved by this many semitones. Blank: ${esc(l.voice)}'s shift (${l.shift_voice>0?'+':''}${l.shift_voice}, Cast tab). Changing it converts this line's recordings again.">pitch <input data-f="pitch_shift" inputmode="numeric" style="width:4.5em" value="${esc(l.shift_own)}" placeholder="${l.shift_voice>0?'+':''}${l.shift_voice}"> st</label>${l.tuned?`<span class="src" title="Takes marked tuned use ${esc(l.voice)}'s fine-tuned Seed-VC model (Cast tab): closer to the voice, a little less warble">· tuned model</span>`:''}</div>
+   ${l.takes.length?`<div class="tks">${top.map((t,n)=>row(t,n+1)).join('')}
+    ${rest.length?`<details class="tmore" data-key="${l.key}" ${opened.has(l.key)||rest.some(t=>t.path==l.pick||t.tweak||(editing&&editing.key==l.key&&editing.path==t.path))?'open':''} ontoggle="this.open?opened.add(this.dataset.key):opened.delete(this.dataset.key)"><summary>${rest.length} more takes</summary>${rest.map((t,n)=>row(t,n+4)).join('')}</details>`:''}</div>`
+    :'<div class="none">No takes yet: generate some, or record it yourself (● Record).</div>'}</div>`}).join('')}
+function mark(){document.querySelectorAll('#lines .card').forEach((e,i)=>e.classList.toggle('sel',i==sel))}
+async function post(u,b){await api(u,b);const y=scrollY;await loadAll();scrollTo(0,y)}
+const pick=(key,take)=>post('/api/pick',{key,take}),regen=(key,on)=>post('/api/regen',{key,on});
+const tweak=(key,take,prompt)=>{editing=null;return post('/api/tweak',{key,take,prompt})};
+function edit(mode,key,path){editing={mode,key,path};draw();const t=$('tw');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);
+ t.onkeydown=e=>{if(e.key=='Enter'&&(e.ctrlKey||e.metaKey)){saveTweak(key,path);e.preventDefault()}if(e.key=='Escape'){editing=null;draw()}}}}
+function saveTweak(key,take){tweak(key,take,$('tw').value)}
+function editWords(key){editing={mode:'words',key};draw();const t=$('wd');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);
+ t.onkeydown=e=>{if(e.key=='Enter'&&(e.ctrlKey||e.metaKey)){saveWords(key);e.preventDefault()}if(e.key=='Escape'){editing=null;draw()}}}}
+async function saveWords(key){const l=S.find(x=>x.key==key),text=$('wd').value;editing=null;await post('/api/text',{ids:l.ids,text})}
+function drawGame(){const n=S.filter(l=>l.pending).length,p=S.filter(l=>l.pick_pending).length;
+ const what=[n?`${n} line${n>1?'s':''}' words`:'',p?`${p} pick${p>1?'s':''}`:''].filter(Boolean).join(' and ');
+ $('game').innerHTML=n||p?`<span class="pend">${what} not in the game yet</span><button class="go" onclick="job({kind:'apply'})" title="${esc(C.apply_about||'')}">${esc(C.apply_label)}</button>`
+  :'<span class="src">game has these words and picks ✓</span>'}
+// Bulk: more takes for every shown line that still needs a pick (each on its own engine).
+function drawBulk(){const L=shown().filter(l=>!l.pick&&l.ready),cl=L.filter(l=>l.cloud).length;
+ $('bulk').innerHTML=tab=='lines'&&L.length?`<select id="bn" title="Takes per line">${[2,4,8].map(n=>`<option ${n==4?'selected':''} value="${n}">${n}</option>`).join('')}</select><button class="${cl?'cl':'go'}" onclick="bulkGen()" title="Adds takes to each shown line without a pick, on each line's own engine${cl?` (${cl} on a cloud engine: paid)`:''}">Generate takes for ${L.length} line${L.length>1?'s':''} needing a pick</button>`:''}
+function bulkGen(){const L=shown().filter(l=>!l.pick&&l.ready),cl=L.filter(l=>l.cloud).length,n=+$('bn').value;
+ if(cl&&!confirm(`${cl} of these ${L.length} lines use a cloud engine (paid). Generate ${n} takes each anyway?`))return;
+ job({kind:'bulk',keys:L.map(l=>l.key),n})}
+async function makeRef(voice,path,emotion){editing=null;RE=null;await post('/api/reference',{voice,path,emotion});note(`Now ${voice}'s ${emotion} reference`)}
+// ★ Make a reference: whose, which emotion, and what it replaces, said before anything changes.
+let RE=null;
+function refEditHtml(l,t){if(!RE||RE.path!=t.path)RE={path:t.path,voice:l.voice,emo:l.emotion};const v=C.voices.find(x=>x.id==RE.voice)||{refs:[]},r=v.refs.find(x=>x.emotion==RE.emo);
+ return `<div class="ed2 refed"><span>Make take ${esc(t.name.replace(/\.wav$/,''))}</span><select onchange="RE.voice=this.value;draw()">${C.voices.map(x=>`<option ${x.id==RE.voice?'selected':''}>${x.id}</option>`).join('')}</select><span>'s</span>
+  <select onchange="RE.emo=this.value;draw()">${EMO().map(e=>`<option ${e==RE.emo?'selected':''}>${e}</option>`).join('')}</select><span>reference</span>
+  <button class="t" onclick="makeRef(RE.voice,'${t.path}',RE.emo)">${r?'Replace':'Make it'} ${esc(RE.voice)}'s ${RE.emo}</button><button onclick="editing=null;RE=null;draw()">cancel</button>
+  <span class="src" style="flex-basis:100%">${r?`It replaces ${esc(RE.voice)}'s ${RE.emo} reference ${play(r.path,'hear it')} (${esc(srcLabel(r.source)||'source unknown')}), kept in ref/ with a timestamp. Takes already made keep their sound.`:`${esc(RE.voice)} has no ${RE.emo} reference yet: its ${RE.emo} lines will clone this take.`} Neutral is the general one: lines whose emotion has no reference of its own use it.</span></div>`}
+function savedFlash(card){const s=card&&card.querySelector('.saved');if(s){s.textContent='saved ✓';s.classList.add('show');setTimeout(()=>s.classList.remove('show'),1500)}}
+async function saveLine(card){const l=S.find(x=>x.key==card.dataset.card);if(!l)return;const f=k=>card.querySelector(`[data-f="${k}"]`).value;
+ const r=await api('/api/line',{ids:l.ids,voice:f('voice'),emotion:f('emotion'),note:f('note'),say:f('say'),engine:f('engine'),pitch_shift:f('pitch_shift'),voice_default:l.voice_default,emotion_default:l.emotion_default});
+ savedFlash(card);if(r.job){$('jobs').classList.add('open');pollJobs()}const y=scrollY;await loadAll();scrollTo(0,y)}
+$('lines').addEventListener('change',e=>{if(e.target.dataset.f){const c=e.target.closest('[data-card]');if(c)saveLine(c)}});
+let lastJob={k:'',t:0};
+async function job(b){const k=JSON.stringify(b);if(k==lastJob.k&&Date.now()-lastJob.t<2000)return;lastJob={k,t:Date.now()};await api('/api/job',b);$('jobs').classList.add('open');pollJobs()}
+function genLine(btn,key,voice){const bar=btn.parentNode,rs=bar.querySelector('.rs'),es=bar.querySelector('.es'),l=S.find(x=>x.key==key);
+ job({kind:'tts',key,voice,n:+bar.querySelector('.gn').value,ref:rs?rs.value:'',engine:es?es.value:'',parts:l&&l.parts.length||0})}
+function engPick(sel){const o=sel.selectedOptions[0],b=sel.parentNode.querySelector('.genb');
+ const cloud=o.dataset.cloud=='1';b.className=(cloud?'cl':'go')+' genb';const rs=sel.parentNode.querySelector('.rs');if(rs)rs.disabled=cloud}
+
+// ------------------------------------------------------------------ ✂ Parts: a line in parts, each in its own tone
+// ✂ Parts: one cue directed tone by tone inside itself. The markup ([urgent]…[/][sad]…[/], [pause 0.8]) is saved with the line
+// (directions.toml parts); each part is made on its own, cloning the voice's reference for its tone, and the parts are
+// joined into whole takes (lineparts.py). Each part keeps its tries: ▶ hears one alone, "use" chooses the one a join
+// takes, ↻ makes more of just that part (each joined with the others' choices, so it's heard in place).
+const TONEC={neutral:'#a9b1c4',calm:'#4fd1c5',warm:'#ffb454',playful:'#f2e35c',urgent:'#ff9e6b',shouting:'#ff6b6b',angry:'#ff4f6d',vengeful:'#c79bff',whisper:'#9fb4ff',sad:'#5cc8ff',crying:'#7fa8ff',stunned:'#ff8fc7'};
+let PE=null;const PX=new Set();          // PE: the parts being written; PX: parts showing all their tries
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const wordsOf=x=>String(x||'').toLowerCase().replace(/<[^<>]*>/g,'').replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();
+function partsParse(m,emo){const A=(C.tones||{}).aliases||{},E=C.emotions,out=[];let cur=emo,tag=null,buf='',pos=0;
+ const tone=w=>{w=w.trim().toLowerCase();return E.includes(w)?w:A[w]||null};
+ const close=g=>{const t=buf.replace(/\s+/g,' ').trim();buf='';if(/[A-Za-z0-9]/.test(t.replace(/<[^<>]*>/g,'')))out.push({tone:cur,tag,text:t,gap:C.tones.gap});if(g!=null&&out.length)out[out.length-1].gap=g};
+ const re=/\[([^\[\]]*)\]/g;let x;
+ while((x=re.exec(m))){buf+=m.slice(pos,x.index);pos=re.lastIndex;const inner=x[1].trim();
+  if(inner=='/'){close();cur=emo;tag=null;continue}
+  const p=inner.match(/^(pause|beat)(?:\s+(\d+(?:\.\d+)?)\s*s?)?$/i);if(p){close(p[2]?+p[2]:C.tones.pause);continue}
+  const t=tone(inner);if(!t)return{parts:out,err:`“[${inner}]” isn't a tone: ${EMO().join(', ')}, or [pause 0.8]`};close();cur=t;tag=inner}
+ buf+=m.slice(pos);close();if(out.length)out[out.length-1].gap=0;return{parts:out,err:out.length?'':'no words yet'}}
+function refFor(l,tone){const v=C.voices.find(x=>x.id==l.voice);if(!v)return'';const have=new Set(v.refs.map(r=>r.emotion));return(C.orders[tone]||[tone]).find(e=>have.has(e))||''}
+function partsPreview(){const l=PE&&S.find(x=>x.key==PE.key),e=$('pp');if(l&&e)e.innerHTML=partsPreviewHtml(l)}
+function partsPreviewHtml(l){const{parts,err}=partsParse(PE.text,l.emotion);
+ return parts.map((p,i)=>{const r=refFor(l,p.tone);return `<span class="pchip"><span class="tone" style="--tc:${TONEC[p.tone]}">${esc(p.tone)}</span>“${esc(short(p.text,48))}”${r&&r!=p.tone&&!l.cloud?` <span class="why" style="color:var(--warn)" title="${esc(l.voice)} has no ${p.tone} reference, so this part clones the ${r} one. Make one on the Cast tab (+ make it).">clones ${r}</span>`:''}</span>${i<parts.length-1?`<span>⏸ ${p.gap} s</span>`:''}`}).join('')
+  +(err?`<span class="err">${esc(err)}</span>`:'')
+  +(parts.length&&wordsOf(parts.map(p=>p.text).join(' '))!=wordsOf(l.text)?`<span class="why" style="color:var(--warn);flex-basis:100%">These words differ from the line's (the subtitles): you can make the line's words match after saving.</span>`:'')}
+function partsEdit(key){const l=S.find(x=>x.key==key);if(!l)return;PE={key,text:l.parts_markup||`[${cap(l.emotion)}]${l.text}[/]`};draw();
+ const t=$('pe');if(!t)return;t.focus();t.setSelectionRange(t.value.length,t.value.length);
+ t.onkeydown=e=>{if(e.key=='Enter'&&(e.ctrlKey||e.metaKey)){saveParts(key);e.preventDefault()}if(e.key=='Escape'){PE=null;draw();e.preventDefault()}e.stopPropagation()}}
+async function saveParts(key,none){const text=none?'':PE.text;await api('/api/parts',{key,parts:text});PE=null;const y=scrollY;await loadAll();scrollTo(0,y);
+ note(none?'Back to one take for the whole line (its parts\' tries stay)':'Parts saved: Generate makes tries of each part and joins them')}
+function partsEditHtml(l){return `<div class="parts" onclick="event.stopPropagation()"><div class="ph"><b>✂ Parts</b><span class="src">each part said in its own tone, then joined into one take.
+  <code>[urgent]words[/]</code> a part · words outside a tag: the line's emotion (${esc(l.emotion)}) · <code>[pause 0.8]</code> the silence between parts (default ${C.tones.gap} s) · tones: ${EMO().join(', ')}</span></div>
+  <textarea id="pe" spellcheck="false" oninput="PE.text=this.value;partsPreview()">${esc(PE.text)}</textarea>
+  <div id="pp" class="pp">${partsPreviewHtml(l)}</div>
+  <div class="pf"><button class="t" onclick="saveParts('${l.key}')">save</button><button onclick="PE=null;draw()">cancel</button>${l.parts_markup?`<button onclick="saveParts('${l.key}',true)" title="Back to one take for the whole line. The parts' tries and every take stay.">no parts</button>`:''}<span class="src">Ctrl+Enter saves · Esc cancels · the subtitles keep the line's words</span></div></div>`}
+function partsHtml(l){if(PE&&PE.key==l.key)return partsEditHtml(l);
+ if(l.parts_err)return `<div class="parts"><div class="ph"><span class="pend">Its parts can't be read: ${esc(l.parts_err)}. Generate skips it until they're fixed.</span><button class="mini" onclick="event.stopPropagation();partsEdit('${l.key}')">✎ fix them</button></div></div>`;
+ if(!l.parts.length)return'';
+ const all=l.parts.every(p=>p.chosen),num=p=>{const t=p.tries.find(x=>x.name==p.chosen);return t?t.n:'–'};
+ const rows=l.parts.map((p,i)=>{const k=l.key+'|'+p.id,shown=PX.has(k)?p.tries.slice().reverse():p.tries.slice(-6).reverse(),older=p.tries.length-shown.length;
+  return `<div class="pr"><span class="tone" style="--tc:${TONEC[p.tone]||'#a9b1c4'}" title="${p.tag?`[${esc(p.tag)}]`:`no tag: the line's emotion`}">${esc(p.tone)}</span><span class="ptext">“${esc(p.text)}”</span>
+   ${p.ref&&p.ref!=p.tone&&!l.cloud?`<span class="why" title="${esc(l.voice)} has no ${p.tone} reference, so this part clones the ${p.ref} one: it won't sound ${p.tone}. Make one on the Cast tab (+ make it), then ↻ this part.">no ${p.tone} reference: clones ${p.ref}</span>`:''}
+   <span class="ptries">${p.tries.length?shown.map(t=>{const on=t.name==p.chosen;return `<span class="ptry ${on?'on':''}">${play(t.path,'#'+t.n)}<button class="use" onclick="event.stopPropagation();useTry('${l.key}','${p.id}','${on&&p.mixed?'':t.name}')" title="${on?(p.mixed?'Joins take this try (click: back to the newest)':'Joins take this try: the newest'):'Use this try when the parts are joined'}">${on?'✓':'use'}</button></span>`}).join('')
+     +(older?`<button class="mini" onclick="event.stopPropagation();PX.add('${k}');draw()">${older} older</button>`:'')
+     :'<span class="src">no tries yet: Generate</span>'}</span>
+   <select class="pg" onclick="event.stopPropagation()" onchange="partGain('${l.key}','${p.id}',this.value)" title="This part's level in the joined take">${[-6,-4,-2,0,2,4,6].concat([-6,-4,-2,0,2,4,6].includes(p.gain)?[]:[p.gain]).sort((a,b)=>a-b).map(g=>`<option value="${g}" ${g==p.gain?'selected':''}>${g>0?'+':''}${g} dB</option>`).join('')}</select>
+   <button class="mini" onclick="event.stopPropagation();partMore(this,'${l.key}','${l.voice}','${p.id}')" title="2 new tries of just this part, each joined with the other parts' chosen tries into a take, so you hear it in place">↻ 2 more</button></div>
+   ${i<l.parts.length-1?`<div class="pgap" title="The silence from the end of this part's voice to the start of the next one's (saved in the parts as [pause N])">⏸ <input inputmode="decimal" value="${p.gap}" onclick="event.stopPropagation()" onchange="partGap('${l.key}',${i},this.value)"> s</div>`:''}`}).join('');
+ const same=wordsOf(l.parts_words)==wordsOf(l.text),V=C.voices.find(x=>x.id==l.voice)||{refs:[]};
+ // Each reference can come from a different candidate, a voice of its own (one reference from candidate #19, another
+ // from #23): parts cloning them may not sound like one person.
+ const from=[...new Set(l.parts.map(p=>{const r=V.refs.find(x=>x.emotion==p.ref),s=r&&r.source;return s&&s.kind=='candidate'?'#'+s.n:s&&s.kind=='take'?'a take':''}).filter(Boolean))];
+ return `<div class="parts" onclick="event.stopPropagation()"><div class="ph"><b>✂ In ${l.parts.length} parts</b><button class="mini" onclick="partsEdit('${l.key}')" title="Rewrite the parts, their tones and pauses">✎ edit parts</button><span class="src">each made on its own in its tone, then joined: Generate makes that many tries of every part and joins them into takes. ▶ hears a try alone; “use” chooses the one a join takes.</span></div>
+  ${rows}
+  ${from.length>1&&!l.cloud?`<div class="src" style="color:var(--warn);padding:4px 0" title="Each reference is cloned as it is: references made from different candidates are slightly different voices. To even them out: ⇄ Mirror a joined take you like into one reference (Seed-VC; it may warble), or make the missing emotions from one candidate on the Cast tab (✦ Restyle it, + make it).">These parts clone references made from different candidates (${from.join(', ')}): the voice may shift a little between parts.</div>`:''}
+  ${same?'':`<div class="pend">The parts say “${esc(l.parts_words)}”; the subtitles say “${esc(l.text)}”. Takes are checked against the subtitles. <button class="mini" onclick="partsWords('${l.key}')" title="Rewrite the line's words (where the project keeps them) to the parts' words, without the tags">Make the line's words match</button></div>`}
+  <div class="pf"><button class="go" ${all?'':'disabled'} onclick="joinParts('${l.key}')" title="${all?'A new take from the chosen try of each part, scored':'Every part needs a try first: Generate'}">Join the chosen tries</button><span class="src">${l.parts.map(p=>`<span style="color:${TONEC[p.tone]}">${esc(p.tone)} #${num(p)}</span>`).join(' · ')} → a new take</span></div></div>`}
+async function useTry(key,part,name){await post('/api/parts/mix',{key,part,try:name})}
+async function partGain(key,part,gain){await post('/api/parts/mix',{key,part,gain:+gain})}
+async function partGap(key,index,secs){if(!/^\s*\d+(\.\d+)?\s*$/.test(secs)){note('A gap is seconds, like 0.6');draw();return}await post('/api/parts/gap',{key,index,secs:+secs})}
+async function joinParts(key){const r=await api('/api/parts/join',{key});const y=scrollY;await loadAll();scrollTo(0,y);$('jobs').classList.add('open');pollJobs();note(`Joined: ${r.take.split('/').pop().replace('.wav','')} (scoring)`)}
+function partMore(btn,key,voice,part){const es=btn.closest('.card').querySelector('.es');job({kind:'tts',key,voice,n:2,part,engine:es?es.value:''});note('2 more tries of that part: each joined into a take when done')}
+async function mixFrom(key,take){ACT=null;const r=await api('/api/parts/mix',{key,from_take:take});const y=scrollY;await loadAll();scrollTo(0,y);
+ note(r.kept==r.parts?'Its tries are chosen above: swap a part, then Join':`${r.kept} of ${r.parts} parts chosen (the others changed since)`)}
+async function partsWords(key){const l=S.find(x=>x.key==key);await post('/api/text',{ids:l.ids,text:l.parts_words})}
+
+// ------------------------------------------------------------------ ✦ Restyle and ⇄ Mirror on a line
+// Restyle: the same voice in a new delivery (a take read again, or the line from its voice's reference), directed by
+// words (Qwen3-TTS acts them, Seed-VC keeps the voice) or by Step-Audio-EditX's edits of the clip itself. Mirror: a take's
+// delivery (timing, intonation) in another voice, a reference's or candidate's (Seed-VC). Both make new takes of the line.
+let ACT=null,LF=null;
+function takeActs(key,path){ACT=ACT&&ACT.path==path?null:{key,path};if(editing&&editing.path==path)editing=null;draw()}
+const sty=e=>(C.styles[e]||C.styles.neutral);
+function intoDefault(l){const v=C.voices.find(x=>x.id==l.voice);if(!v)return'';const r=v.refs.find(x=>x.emotion==l.emotion)||v.refs.find(x=>x.emotion=='neutral')||v.refs[0];return r?r.path:''}
+function lineForm(mode,key,path){const l=S.find(x=>x.key==key);ACT=null;
+ LF=mode=='restyle'?{mode,key,path,engine:'qwen',style:l.note||sty(l.emotion).words,recipe:sty(l.emotion).recipe,n:2,emo:l.note?'':l.emotion}
+  :mode=='beat'?{mode,key,path,word:-1,secs:'0.6'}:{mode,key,path,into:intoDefault(l),kinds:'clone,pitch',shift:''};
+ editing={mode,key,path};draw();const f=document.querySelector('.lform textarea,.lform select');if(f){f.scrollIntoView({block:'center'});f.focus()}}
+function intoOptions(sel,skip){return C.voices.map(v=>`<optgroup label="${esc(v.id)}">${v.refs.filter(r=>r.path!=skip).map(r=>`<option value="${esc(r.path)}" ${r.path==sel?'selected':''}>${esc(v.id)}: ${r.emotion} reference</option>`).join('')}${v.candidates.slice().reverse().filter(c=>c.path!=skip).map(c=>`<option value="${esc(c.path)}" ${c.path==sel?'selected':''}>${esc(v.id)}: candidate ${c.n}${c.uses.some(u=>u.version=='current')?' ('+c.uses.filter(u=>u.version=='current').map(u=>u.emotion).join(', ')+')':''}${c.restyle?' ✦ '+esc(c.restyle.style).slice(0,40):''}</option>`).join('')}</optgroup>`).join('')}
+function editsHelp(){const e=C.editx.edits;return `emotion: ${e.emotion.join(', ')} · style: ${e.style.join(', ')} · speed: ${e.speed.join(', ')}`}
+function lineFormHtml(l,t){const F=LF;if(!F||F.key!=l.key)return'';const what=t?`take ${esc(t.name.replace(/\.wav$/,''))}`:`${esc(l.voice)}'s voice`;
+ if(F.mode=='beat'){const w=((t&&t.heard)||l.text).split(/\s+/).filter(Boolean);
+  return `<div class="lform"><div class="row"><b>⏸ Add a beat to ${what}</b>${play(t.path)}<span class="src">a pause put in, as a new take of this line (its own room sound drawn out, not digital silence)</span><button class="x" style="margin-left:auto" onclick="LF=null;editing=null;draw()">✕</button></div>
+  <div class="row"><span class="src">after</span><select onchange="LF.word=+this.value"><option value="-1" ${F.word<0?'selected':''}>each sentence</option>${w.slice(0,-1).map((x,i)=>`<option value="${i}" ${F.word==i?'selected':''}>“${esc(x)}”</option>`).join('')}</select>
+   <span class="src">for</span><select onchange="LF.secs=this.value">${['0.3','0.6','0.9','1.2'].map(x=>`<option ${x==F.secs?'selected':''}>${x}</option>`).join('')}</select><span class="src">seconds</span>
+   <button class="go" onclick="lineGo()">⏸ Add it</button></div></div>`}
+ if(F.mode=='mirror')return `<div class="lform"><div class="row"><b>⇄ Mirror ${what}</b>${t?play(t.path):''}<span class="src">its delivery (timing, intonation, energy) in another voice: new takes of this line (local Seed-VC, about 30 s)</span><button class="x" style="margin-left:auto" onclick="LF=null;editing=null;draw()">✕</button></div>
+  <div class="row"><span class="src">into the voice of</span><select onchange="LF.into=this.value">${intoOptions(F.into)}</select></div>
+  <div class="row"><span class="src">make</span><select onchange="LF.kinds=this.value;draw()"><option value="clone,pitch" ${F.kinds=='clone,pitch'?'selected':''}>both kinds</option><option value="pitch" ${F.kinds=='pitch'?'selected':''}>pitch: the delivery note for note</option><option value="clone" ${F.kinds=='clone'?'selected':''}>clone: the voice's own pitch</option></select>
+   <span class="src" title="Semitones for the pitch kind. Auto: the difference between the two voices' everyday pitch, so a shout stays a shout and only the voice changes.">pitch shift <input type="number" step="1" style="width:5em" placeholder="auto" value="${esc(F.shift)}" oninput="LF.shift=this.value"> st</span>
+   <button class="go" onclick="lineGo()">⇄ Mirror</button></div></div>`;
+ const ex=C.editx.why;
+ return `<div class="lform"><div class="row"><b>✦ Restyle ${what}</b>${t?play(t.path):''}<span class="src">the same voice in a new delivery: new takes of this line (local)</span><button class="x" style="margin-left:auto" onclick="LF=null;editing=null;draw()">✕</button></div>
+  <div class="row">${EMO().map(e=>`<button class="preset ${F.emo==e?'on':''}" title="${esc(sty(e).words)}" onclick="lfPreset('${e}')">${e}</button>`).join('')}</div>
+  <div class="eng"><label><input type="radio" name="eng${l.key}" ${F.engine=='qwen'?'checked':''} onchange="LF.engine='qwen';draw()"> act it from words (Qwen3-TTS acts, Seed-VC keeps the voice)</label>
+   <label class="${ex?'off':''}" title="${ex?'Not installed: '+esc(ex):'Edits the clip itself: its delivery changes, though its voice can drift (match 0.2-0.6 in tests)'}"><input type="radio" name="eng${l.key}" ${F.engine=='editx'?'checked':''} ${ex?'disabled':''} onchange="LF.engine='editx';draw()"> edit ${t?'this take':'the reference'} (Step-Audio-EditX)</label>
+   ${F.engine=='qwen'?cleanBox('LF',F):''}</div>
+  ${F.engine=='qwen'?`<textarea id="lf" placeholder="How she says it, in plain words: what's happening, how it lands" oninput="LF.style=this.value">${esc(F.style)}</textarea>`
+   :`<div class="row"><input style="flex:1;min-width:260px" value="${esc(F.recipe)}" oninput="LF.recipe=this.value" placeholder="emotion:coldness, style:murmur"><span class="src" title="${esc(editsHelp())}">edits in turn (hover for the words it knows; x2 repeats one)</span></div>`}
+  ${ex&&F.engine=='qwen'?`<div class="why">Step-Audio-EditX isn't installed yet: ${esc(ex)}</div>`:''}
+  <div class="row"><span class="src">keep</span><select onchange="LF.n=+this.value">${[1,2,3,4].map(n=>`<option ${n==F.n?'selected':''}>${n}</option>`).join('')}</select><span class="src">of 3 tries each: the cleanest still in ${esc(l.voice)}'s voice</span>
+   <button class="go" onclick="lineGo()">✦ Restyle</button></div></div>`}
+// ✦ Restyle's re-read: Seed-VC's conversion warbles; Qwen3-TTS reading it again, cloning it, keeps the acting.
+function cleanBox(f,F){return `<label title="Seed-VC's conversion warbles. Qwen3-TTS reads it again, cloning it: the acting kept without the warble (a little faster, the pitch a little nearer the voice's everyday one). Off: the conversion itself, for the exact acting."><input type="checkbox" ${F.raw?'':'checked'} onchange="${f}.raw=!this.checked"> read it again cleanly</label>`}
+function lfPreset(e){const l=S.find(x=>x.key==LF.key);LF.emo=e;LF.style=sty(e).words+(l&&l.note?'. '+l.note:'');LF.recipe=sty(e).recipe;draw()}
+async function lineGo(){const F=LF;if(!F)return;
+ if(F.mode=='beat'){const l=S.find(x=>x.key==F.key)||{takes:[],text:''},t=l.takes.find(x=>x.path==F.path),w=((t&&t.heard)||l.text).split(/\s+/).filter(Boolean),clean=x=>(x||'').toLowerCase().replace(/[^a-z0-9']/g,'');
+  const word=F.word>=0?clean(w[F.word]):'',nth=F.word>=0?w.slice(0,F.word+1).filter(x=>clean(x)==word).length:1;
+  await job({kind:'beat',key:F.key,take:F.path,secs:F.secs,after_word:word,nth});note('Adding the beat: the new take appears on this line when it\'s done');LF=null;editing=null;draw();return}
+ if(F.mode=='mirror'){if(!F.into){note('Choose whose voice it goes into');return}
+  await job({kind:'mirror',key:F.key,from:F.path,into:F.into,kinds:F.kinds,shift:F.shift});note('Mirroring: new takes appear on this line when it\'s done')}
+ else{if(F.engine=='qwen'&&!F.style.trim()){note('Say how it should be read first');return}
+  await job({kind:'restyle',key:F.key,from:F.path||'',engine:F.engine,style:F.style,recipe:F.recipe,n:F.n,emotion:F.emo||'',raw:!!F.raw});note('Restyling: new takes appear on this line when it\'s done')}
+ LF=null;editing=null;draw()}
+const short=(x,n)=>{x=String(x||'');return x.length>n?x.slice(0,n-1).trimEnd()+'…':x};
+function howLabel(h){if(h.kind=='mirror')return `⇄ ${esc(h.came)} in the voice of ${esc(h.into)}`;
+ if(h.kind=='parts')return `✂ ${h.parts.map(p=>`<span style="color:${TONEC[p.tone]||'inherit'}">${esc(p.tone)} #${esc(p.n)}${p.gain?` ${p.gain>0?'+':''}${p.gain} dB`:''}</span>`).join(' · ')}`;
+ if(h.kind=='beat')return `⏸ ${h.secs} s beat after ${esc(h.after)} · ${esc(h.came)}`;
+ return `<span title="${esc(h.style)}">✦ ${esc(short(h.style,90))}</span>${h.engine=='editx'?' (Step-Audio-EditX)':''}${h.came&&h.came!='?'?' · in the voice of '+esc(h.came):''}`}
+
+// ------------------------------------------------------------------ your performances: recorded here, re-voiced by Seed-VC
+// The raw microphone (no echo cancelling, noise suppression or automatic gain: they'd flatten the delivery), captured
+// as PCM and sent as a WAV. The server keeps it in performances/ and converts it into the line's voice as a job, into
+// the reference chosen in the card's reference box.
+let REC=null,recBusy=false;
+const CAP=URL.createObjectURL(new Blob([`registerProcessor('cap',class extends AudioWorkletProcessor{process(i){const c=i[0]&&i[0][0];if(c)this.port.postMessage(c.slice(0));return true}})`],{type:'text/javascript'}));
+const recBtn=l=>REC&&REC.key==l.key
+ ?`<button class="rec on" data-rec="${l.key}" onclick="event.stopPropagation();stopRec()" title="Stop, keep it and convert it (R). Esc throws the take away."><b>■</b> Stop <span class="rt">0.0 s</span><span class="meter"><i></i></span></button>`
+ :`<button class="rec" onclick="event.stopPropagation();rec('${l.key}')" title="Record yourself saying this line (R on the selected line). Seed-VC then re-voices it as ${esc(l.voice)}."><b>●</b> Record</button>`;
+async function rec(key){if(recBusy)return;if(REC){const same=REC.key==key;await stopRec();if(same)return}
+ recBusy=true;let stream;
+ try{const mic=$('mic').value;
+  stream=await navigator.mediaDevices.getUserMedia({audio:{deviceId:mic?{exact:mic}:undefined,channelCount:1,echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+  const ctx=new AudioContext();await ctx.audioWorklet.addModule(CAP);if(ctx.state!='running')await ctx.resume();
+  const node=new AudioWorkletNode(ctx,'cap'),mute=ctx.createGain();mute.gain.value=0;
+  ctx.createMediaStreamSource(stream).connect(node);node.connect(mute).connect(ctx.destination);   // pulled by the graph, never heard
+  const R=REC={key,stream,ctx,sr:ctx.sampleRate,chunks:[],len:0,peak:0,lvl:0,t0:performance.now()};
+  node.port.onmessage=e=>{const d=e.data;R.chunks.push(d);R.len+=d.length;let p=0;for(const x of d){const a=x<0?-x:x;if(a>p)p=a}R.peak=Math.max(R.peak,p);R.lvl=Math.max(p,R.lvl*.9)}}
+ catch(e){if(stream)stream.getTracks().forEach(t=>t.stop());flash('Microphone: '+(e.message||e.name));return}
+ finally{recBusy=false}
+ draw();recTick();listMics()}
+function recTick(){if(!REC)return;const s=(performance.now()-REC.t0)/1000,b=document.querySelector(`[data-rec="${CSS.escape(REC.key)}"]`);
+ if(b){b.querySelector('.rt').textContent=s.toFixed(1)+' s';const i=b.querySelector('.meter i'),db=20*Math.log10(REC.lvl||1e-5);
+  i.style.width=Math.max(0,Math.min(100,(db+50)*2))+'%';i.style.background=REC.lvl>.98?'var(--bad)':db>-6?'var(--warn)':'var(--ok)'}
+ if(s>180)return stopRec();                        // forgotten: keep what there is
+ requestAnimationFrame(recTick)}
+async function stopRec(discard){const R=REC;if(!R)return;REC=null;R.stream.getTracks().forEach(t=>t.stop());await R.ctx.close();draw();
+ if(discard){note('Take thrown away');return}
+ const len=Math.max(0,R.len-Math.round(R.sr*.12));    // drops the last 0.12 s: the click or key that stopped it
+ if(len<R.sr*.3){flash('Too short: nothing was recorded');return}
+ const rs=document.querySelector(`[data-card="${CSS.escape(R.key)}"] .rs`);
+ try{const r=await fetch(`/api/perform?key=${encodeURIComponent(R.key)}&ref=${encodeURIComponent(rs?rs.value:'')}`,{method:'POST',headers:{'Content-Type':'audio/wav'},body:wav(R.chunks,len,R.sr)});
+  const j=await r.json();if(!r.ok||j.error)throw new Error(j.error||'failed');
+  const warn=j.peak>.98?' It clipped: back off the mic.':j.peak<.05?' It\'s very quiet: move closer.':'';
+  note(`Saved your take ${j.name} (${j.secs} s). Converting it…${warn}`);
+  if(warn){const e=$('toast');e.style.background='#3a2a12';e.style.borderColor='var(--warn)'}
+  const y=scrollY;await loadAll();scrollTo(0,y);$('jobs').classList.add('open');pollJobs()}
+ catch(e){flash('Your take was not saved: '+e.message)}}
+function wav(chunks,len,sr){const b=new ArrayBuffer(44+len*2),v=new DataView(b),s=(o,t)=>[...t].forEach((ch,i)=>v.setUint8(o+i,ch.charCodeAt(0)));
+ s(0,'RIFF');v.setUint32(4,36+len*2,true);s(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+ v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);s(36,'data');v.setUint32(40,len*2,true);
+ let o=44,k=0;for(const c of chunks)for(let i=0;i<c.length&&k<len;i++,k++,o+=2){const x=Math.max(-1,Math.min(1,c[i]));v.setInt16(o,x<0?x*32768:x*32767,true)}
+ return b}
+async function listMics(){try{const d=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind=='audioinput'&&x.deviceId&&x.deviceId!='default'),s=$('mic');
+ let v=s.value;if(!v)try{v=localStorage.getItem('vs_mic')||''}catch(e){}
+ s.innerHTML='<option value="">default mic</option>'+d.map((x,i)=>`<option value="${esc(x.deviceId)}">${esc(x.label||'mic '+(i+1))}</option>`).join('');
+ s.value=[...s.options].some(o=>o.value==v)?v:''}catch(e){}}
+$('mic').onchange=()=>{try{localStorage.setItem('vs_mic',$('mic').value)}catch(e){}};
+function convertLine(btn,key,voice){const rs=btn.closest('.card').querySelector('.rs');job({kind:'convert',key,voice,ref:rs?rs.value:''})}
+async function delPerf(key,path){if(!confirm('Delete this recording and its conversions? (Kept in removed/; a picked conversion stays.)'))return;await post('/api/perform/delete',{key,path})}
+
+// ------------------------------------------------------------------ compact players (one shared audio element)
+const AU=new Audio();let auSrc='';
+function play(path,label){return `<button class="play ${label?'':'solo'}" data-src="${esc(path)}" onclick="event.stopPropagation();toggle(this)" title="Play"><i>▶</i>${label?esc(label):''}</button>`}
+function toggle(b){if(SC)stopScene();const src=b.dataset.src;if(auSrc==src&&!AU.paused){AU.pause();return}auSrc=src;AU.src='/audio?p='+encodeURIComponent(src);AU.play()
+ const r=b.closest('.cr[data-cand]');if(r&&tab=='cast'){HEARD.add(r.dataset.cand);if(CSEL!=r.dataset.cand){CSEL=r.dataset.cand;document.querySelectorAll('.cr.on').forEach(x=>x.classList.toggle('on',x==r));r.classList.add('on')}
+  const nw=r.querySelector('.new');if(nw)nw.remove()}}
+function paint(){document.querySelectorAll('.play').forEach(b=>{const on=b.dataset.src==auSrc&&!AU.paused,pc=b.dataset.src==auSrc&&AU.duration?AU.currentTime/AU.duration*100:0;
+ b.classList.toggle('on',on);b.querySelector('i').textContent=on?'❚❚':'▶';b.style.background=pc?`linear-gradient(90deg,#1e3a4d ${pc}%,#232836 ${pc}%)`:''})}
+['play','pause','ended','timeupdate'].forEach(e=>AU.addEventListener(e,paint));
+
+// ------------------------------------------------------------------ Cast
+// One cast member at a time (the list on the left), its references as a palette of emotions, its
+// candidates as quiet rows with two buttons (Use as…, ⋯), and every change said in words, and confirmed, before it
+// happens. j/k (or ↓/↑) move through the candidates, Space plays the one selected, u: Use as…, Esc closes a form.
+let CSEL=null,CF=null,candFilter='all';
+try{CV=CV||localStorage.getItem('vs_cv')||null}catch(e){}
+function castVoices(){return C.voices.slice().sort((a,b)=>b.lines-a.lines||a.id.localeCompare(b.id))}
+function curVoice(){if(['speakers','pron','add'].includes(CV))return null;const vs=castVoices();let v=vs.find(x=>x.id==CV);if(!v){v=vs[0];CV=v&&v.id}return v}
+function pickVoice(id){if(CV!=id){CSEL=null;CF=null;candFilter='all'}CV=id;try{localStorage.setItem('vs_cv',id)}catch(e){}
+ try{history.replaceState(null,'','#cast/'+id)}catch(e){}draw();scrollTo(0,0)}
+function drawCast(){if(!C)return;const v=curVoice(),keep=(document.querySelector('.clist')||{}).scrollTop||0;$('count').textContent=C.voices.length+' voices';
+ $('cast').innerHTML=`<div class="cast2"><nav class="clist">${castVoices().map(castItem).join('')}
+   <div class="cnav"><button class="cv ${CV=='speakers'?'on':''}" onclick="pickVoice('speakers')"><b>Speakers → voices</b><span class="cvs">which voice each speaker in the script uses</span></button>
+    <button class="cv ${CV=='pron'?'on':''}" onclick="pickVoice('pron')"><b>Pronunciations</b><span class="cvs">${C.pronunciations.length} words said differently in every line</span></button>
+    <button class="cv ${CV=='add'?'on':''}" onclick="pickVoice('add')"><b>+ Add cast member</b></button></div></nav>
+  <section class="cdetail">${C.xai_key||!v||v.engine!='xai'?'':`<div class="warn xai">No xAI key here: this voice can't generate until XAI_API_KEY=… is in the studio's environment (~/.config/verbaline/env for the service; then restart it).</div>`}
+   ${CV=='speakers'?speakersPane():CV=='pron'?pronPane():CV=='add'?addPane():v?voicePane(v):''}</section></div>`;
+ const cl=document.querySelector('.clist');if(cl)cl.scrollTop=keep;paintJobs()}
+function castItem(x){const have=new Set(x.refs.map(r=>r.emotion));
+ return `<button class="cv ${x.id==CV?'on':''}" onclick="pickVoice('${x.id}')" title="${esc(x.profile.description||'')}"><b>${esc(x.id)}</b><span class="cvp" title="${x.picked} of ${x.lines} lines picked">${x.picked}/${x.lines}</span>
+  <span class="cvs">${esc(x.speakers.join(' · ')||'no speaker yet')}${castMark(x)}</span></button>`}
+// At most one marker per cast member: working, new candidates, or no reference while it has lines.
+function castMark(x){const mine=j=>new RegExp(`\\b${x.id}\\b`).test(j.label);
+ if(J.current&&mine(J.current)||(J.queued||[]).some(mine))return ' <span class="mk work">working…</span>';
+ const n=x.candidates.filter(isNew).length;if(n)return ` <span class="mk nw">${n} new</span>`;
+ if(!x.refs.length&&x.lines&&!(C.engines.find(e=>e.id==x.engine)||{}).cloud)return ' <span class="mk warn">no reference</span>';return''}
+function voicePane(v){const p=v.profile,e=C.engines.find(x=>x.id==v.engine)||{},cloud=!!e.cloud;
+ return `<div data-card="v:${v.id}" data-voice="${v.id}"><div class="vhead"><span class="vn">${esc(v.id)}</span><span class="pill ${cloud?'cloud':'local'}">${esc(engLabel(v.engine))}</span>
+   ${v.speakers.map(s=>`<span class="chip">${esc(s)}</span>`).join('')}<span class="ids">${v.lines} lines · ${v.picked} picked</span>
+   <a class="lnk" href="#lines" onclick="showLines('${v.id}');return false" title="Its lines on the Lines tab">its lines →</a><span class="saved"></span></div>
+  <textarea class="vdesc" data-pf="description" rows="2" placeholder="Who they are: age, accent, texture (voice design reads this)" title="Who they are: age, accent, texture. How a line is read goes in ✦ Restyle or the line's notes. Changes here only reach new designs. Saves when you leave the box.">${esc(p.description)}</textarea>
+  <div id="vjobs"></div>
+  <div class="sec"><h3>References<span class="h3n">${cloud?'used only with a local engine':'each emotion\'s lines clone its clip; an empty one falls back to neutral'}</span></h3>${v.refs.length||cloud?'':`<div class="why first">No references yet: listen to the candidates below and choose one with <b>Use as… neutral</b> first. Every other emotion falls back to it until it has its own.</div>`}${palette(v)}${behind(v)}${CF&&CF.at=='pal'?castForm(v,null):''}</div>
+  <div class="sec"><h3>Candidates<span class="h3n">${v.candidates.length}</span>${candFilters(v)}<span class="sp"></span>${designCtl(v)}</h3>
+   <div class="reads"><span class="src">new designs read</span><textarea data-pf="passage" rows="1" placeholder="${esc(C.passage_default)}" title="The audition text: what new design candidates read (write one that pulls the emotion you want to hear). Saves when you leave the box.">${esc(p.passage)}</textarea></div>${candList(v)}</div>
+  <details class="sec vset" ${VSET()?'open':''} ontoggle="setVset(this.open)"><summary>Voice settings <span class="h3n">engine, notes, pitch shift, Train (Seed-VC, for your recordings and ⇄ Mirror), takes</span></summary>${settings(v)}</details></div>`}
+const VSET=()=>{try{return localStorage.getItem('vs_vset')=='1'}catch(e){return false}};
+function setVset(o){try{localStorage.setItem('vs_vset',o?'1':'0')}catch(e){}}
+function showLines(voice){$('voice').value=voice;$('show').value='all';$('q').value='';sel=0;setTab('lines');scrollTo(0,0)}
+
+// References: one tile per emotion, in rows of four: everyday, heat, hurt and hush.
+function palette(v){const by=Object.fromEntries(v.refs.map(r=>[r.emotion,r])),n={};S.forEach(l=>{if(l.voice==v.id)n[l.emotion]=(n[l.emotion]||0)+1});
+ return `<div class="pal">${EMO().map(em=>{const r=by[em],open=CF&&CF.at=='pal'&&(CF.slot==em||r&&!CF.slot&&CF.path==r.path),k=n[em]?`<span class="tcnt" title="${esc(v.id)} has ${n[em]} line${n[em]>1?'s':''} marked ${em}">${n[em]} line${n[em]>1?'s':''}</span>`:'';
+  if(!r&&!v.refs.length)return `<div class="tile empty"><span class="tn">${em}${k}</span><span class="tr"><span class="ts">${em=='neutral'?'Use as… on a candidate below':'falls back to neutral'}</span></span></div>`;
+  if(!r)return `<div class="tile empty ${open?'on':''}"><span class="tn">${em}${k}</span><span class="tr">${v.fallback&&v.fallback[em]?`<span class="ts" title="Its ${em} lines clone the ${v.fallback[em]} reference until it has its own">uses ${v.fallback[em]}</span>`:''}<button class="ghost" onclick="openCF({at:'pal',mode:'restyle',voice:'${v.id}',emo:'${em}',slot:'${em}'})" title="Make ${esc(v.id)} ${em}: restyle one of its references into it, then use the best new candidate">+ make it</button></span></div>`;
+  const sc=r.source&&r.source.kind=='candidate'&&r.source.version=='current'&&v.candidates.find(c=>c.n==r.source.n);
+  return `<div class="tile ${open?'on':''}" title="${esc(r.text)}"><span class="tn">${play(r.path)}${em}${k}</span><span class="tr"><span class="ts">${refSrcShort(v,r.source)}</span>${sc&&warbly(sc)?warbleTag(sc):''}
+   <span class="ta"><button class="mini" title="This voice in a new delivery, from this reference (✦ Restyle: new candidates)" onclick="openCF({at:'pal',mode:'restyle',voice:'${v.id}',path:'${r.path}'})">✦</button><button class="mini" title="This reference's delivery in another voice (⇄ Mirror: new candidates)" onclick="openCF({at:'pal',mode:'mirror',voice:'${v.id}',path:'${r.path}'})">⇄</button><button class="x" title="Remove this reference (asks first)" onclick="openCF({at:'pal',mode:'unref',voice:'${v.id}',emo:'${em}',path:'${r.path}'})">✕</button></span></span></div>`}).join('')}</div>`}
+// The candidates a voice's references come from, when more than one: each is a voice of its own (a voice whose
+// references came from four candidates spoke its lines in four voices).
+function behind(v){const g={},other=[];v.refs.forEach(r=>{const s=r.source;if(s&&s.kind=='candidate')(g[s.n]=g[s.n]||[]).push(r.emotion);else other.push(r.emotion)});
+ const ks=Object.keys(g);if(ks.length+(other.length?1:0)<2)return'';
+ return `<div class="behind" title="Each candidate is a voice of its own: lines cloned from different ones sound like different people. ⇄ Mirror moves a delivery into the one you want.">References from ${ks.length} candidate${ks.length>1?'s':''}: ${ks.map(n=>`<span class="rsrc" onclick="seeCand('${v.id}',${n})">#${n}</span> (${g[n].join(', ')})`).join(' · ')}${other.length?` · and other clips (${other.join(', ')})`:''}</div>`}
+function refSrcShort(v,s){if(!s)return '<span title="Not found among its candidates or takes">source unknown</span>';
+ if(s.kind=='candidate'){const live=s.version!='deleted'&&v.candidates.some(c=>c.n==s.n);const t=`Made from candidate ${s.n}: ${VERSION[s.version]}`;
+  return `<span class="${live?'rsrc':''}" title="${esc(t)}${live?'. Click to show it.':''}" ${live?`onclick="seeCand('${v.id}',${s.n})"`:''}>#${s.n}${s.version=='current'?'':s.version=='deleted'?', deleted':', older audio'}</span>`}
+ return `<span title="${esc('Made from '+srcLabel(s))}">← ${esc(short(srcLabel(s),34))}</span>`}
+
+// Candidates: newest first, quiet rows; the actions open under the row they act on.
+function candFilters(v){const k={used:v.candidates.filter(c=>c.uses.length).length,restyle:v.candidates.filter(c=>c.restyle).length,
+  mirror:v.candidates.filter(c=>c.mirror).length,design:v.candidates.filter(c=>!c.restyle&&!c.mirror).length};
+ const b=(id,label,n)=>n||id=='all'?`<button class="seg ${candFilter==id?'on':''}" onclick="candFilter='${id}';draw()">${label}${id=='all'?'':' '+n}</button>`:'';
+ return `<span class="segs">${b('all','all')}${b('used','in use',k.used)}${b('restyle','✦ restyled',k.restyle)}${b('mirror','⇄ mirrored',k.mirror)}${b('design','designed',k.design)}</span>`}
+function designCtl(v){return `<select class="dn" title="How many">${[2,3,6].map(n=>`<option ${n==3?'selected':''}>${n}</option>`).join('')}</select><button class="go" onclick="job({kind:'design',voice:'${v.id}',n:+this.previousElementSibling.value});note('Designing: new candidates appear at the top when it\\'s done')" title="New voices from the description (local Qwen3-TTS VoiceDesign)">Design new</button>`}
+function candList(v){if(!v.candidates.length)return '<div class="src">No candidates: design some from the description (Design new, above).</div>';
+ const f=candFilter,cs=v.candidates.slice().reverse().filter(c=>f=='all'||f=='used'&&c.uses.length||f=='restyle'&&c.restyle||f=='mirror'&&c.mirror||f=='design'&&!c.restyle&&!c.mirror);
+ return `<div class="cands2">${cs.map(c=>candRow(v,c)).join('')||'<div class="src" style="padding:8px 10px">None of this kind.</div>'}</div>
+  ${v.rejected||v.older?`<div class="src" style="margin-top:4px">${[v.rejected?v.rejected+' deleted':'',v.older?v.older+' older version'+(v.older>1?'s':'')+' (from before ↻ made new candidates)':''].filter(Boolean).join(' · ')}, in voices/${esc(v.id)}/design/rejected (recoverable)</div>`:''}`}
+function candRow(v,c){const on=CSEL==c.path;
+ return `<div class="cr ${on?'on':''}" data-cand="${c.path}" onclick="selCand('${c.path}')">${play(c.path)}<span class="cn">#${c.n}</span>
+  <span class="cdesc">${candDesc(v,c)}</span>${usesChip(v,c)}${c.text&&!c.reread?`<span class="said" title="It reads: “${esc(c.text)}”">“${esc(short(c.text,64))}”</span>`:''}${isNew(c)?'<span class="new" title="Made in the last 3 hours, not played yet">new</span>':''}<span class="sp"></span>
+  <button class="usebtn ${CF&&CF.at==c.path&&CF.mode=='use'?'t':''}" onclick="event.stopPropagation();openCF({at:'${c.path}',mode:'use',voice:'${v.id}',path:'${c.path}',emo:'${c.restyle&&c.restyle.emotion||''}'})" title="Make it one of ${esc(v.id)}'s references, for an emotion (says what it replaces, and asks)">Use as${c.restyle&&c.restyle.emotion&&!c.uses.some(u=>u.emotion==c.restyle.emotion&&u.version=='current')?' '+c.restyle.emotion:''}…</button>
+  <button class="mini more ${CF&&CF.at==c.path&&CF.mode!='use'?'t':''}" onclick="event.stopPropagation();openCF({at:'${c.path}',mode:'more',voice:'${v.id}',path:'${c.path}'})" title="More: ✦ restyle, ⇄ mirror, hear it cloned, read the audition text again, give to another voice, delete">⋯</button></div>
+  ${CF&&CF.at==c.path?castForm(v,c):''}`}
+// Seed-VC's conversions warble: every mirror, and the restyles made before they were read again cleanly.
+const warbly=c=>!!(c.mirror||c.restyle&&c.restyle.engine!='editx'&&!c.restyle.reread);
+const warbleTag=c=>`<span class="wb" title="Candidate ${c.n} is a Seed-VC conversion: it may warble. ⋯ → ↻ Read it again cleanly makes a clean copy (then Use as… on that).">may warble</span>`;
+function candDesc(v,c){
+ if(c.reread){const r=c.reread;return `<span class="rrd" title="Candidate ${r.of}'s voice reading: “${esc(r.text)}”">↻ #${r.of} reads “${esc(short(r.text,52))}”</span>`}
+ if(c.restyle){const r=c.restyle,w=r.what||{};return `<span class="rsty" title="Restyled from ${esc(whatLabel(w))} as “${esc(r.style)}”${r.engine=='editx'?' by Step-Audio-EditX':r.reread?', read again cleanly':''}${r.match!=null?'; voice match to it '+r.match.toFixed(2)+' (1 is the same voice)':''}">✦ ${esc(short(r.style,46))}</span><span class="rsrc" ${w.kind=='candidate'?`onclick="event.stopPropagation();seeCand('${v.id}',${w.n})"`:''}>← ${esc(w.kind=='ref'?w.emotion+' ref':'#'+w.n)}${r.match!=null?' · '+r.match.toFixed(2):''}</span>${warbly(c)?warbleTag(c):''}`}
+ if(c.mirror){const m=c.mirror;return `<span class="mir" title="⇄ ${esc(m.came)} in the voice of ${esc(m.into)}: ${m.kind=='pitch'?'the delivery note for note'+(m.shift!=null?', '+(m.shift>0?'+':'')+m.shift+' semitones':''):'the voice\'s own pitch'}${m.match!=null?'; voice match to it '+m.match.toFixed(2):''}">⇄ ${esc(short(m.came,44))}</span><span class="rsrc">→ ${esc(m.into.replace(v.id+'\'s ','').replace(v.id+' candidate ','#'))} · ${m.kind}${m.match!=null?' · '+m.match.toFixed(2):''}</span>${warbleTag(c)}`}
+ const b=[];if(c.origin)b.push(`<span class="from" title="Designed for ${esc(c.origin.voice)} (their candidate ${c.origin.candidate}) from: ${esc(c.origin.description)}">from ${esc(c.origin.voice)}</span>`);
+ b.push(`<span class="dsg" title="${esc(c.description?'Designed from: '+c.description:'Designed from the description')}${c.at?' · '+esc(c.at):''}">designed${c.description&&c.description!=v.profile.description?' · older description':''}</span>`);
+ if(c.retries)b.push(`<span class="dsg" title="Read again with a new audition text ${c.retries} time${c.retries>1?'s':''} (↻): references made before keep the older audio">↻${c.retries>1?c.retries:''}</span>`);
+ return b.join('')}
+function usesChip(v,c){const now=c.uses.filter(u=>u.version=='current'),old=c.uses.filter(u=>u.version!='current');
+ return (now.length?`<span class="uses" title="${esc(v.id)}'s ${now.map(u=>u.emotion).join(', ')} reference${now.length>1?'s':''}: this very audio">${now.map(u=>u.emotion).join(' · ')}</span>`:'')
+  +(old.length?`<span class="olduse" title="${esc(v.id)}'s ${old.map(u=>u.emotion).join(', ')} reference${old.length>1?'s are':' is'} this candidate's older audio, from before a ↻ re-read replaced it: not what plays here. The tile's ▶ plays it.">older audio: ${old.map(u=>u.emotion).join(', ')}</span>`:'')}
+const HEARD=new Set();          // candidates played this session: not "new" any more
+function isNew(c){if(!c.at||HEARD.has(c.path))return false;const t=Date.parse(c.at.replace(' ','T'));return t&&Date.now()-t<3*3600e3}
+function selCand(path){CSEL=CSEL==path?null:path;if(CF&&CF.at!=path&&CF.at!='pal')CF=null;draw()}
+function seeCand(voice,n){const v=C.voices.find(x=>x.id==voice),c=v&&v.candidates.find(x=>x.n==n);
+ if(!c){note('Candidate '+n+' isn\'t in the list (deleted, or only its earlier audio is the reference)');return}
+ candFilter='all';CSEL=c.path;draw();const e=document.querySelector(`.cr[data-cand="${CSS.escape(c.path)}"]`);if(e){e.scrollIntoView({block:'center'});e.classList.add('hl');setTimeout(()=>e.classList.remove('hl'),1600)}}
+
+// The forms: under the row (or the palette) they act on, each saying what will happen.
+function openCF(o){const v=C.voices.find(x=>x.id==o.voice);
+ if(CF&&CF.at==o.at&&CF.mode==o.mode&&CF.voice==o.voice&&(CF.slot||'')==(o.slot||'')&&!CF.clean==!o.clean&&(o.at!='pal'||!o.path||CF.path==o.path)){CF=null;draw();return}
+ if(o.mode=='restyle'){const base=v.refs.find(r=>r.emotion=='neutral')||v.refs[0];o.path=o.path||(base&&base.path)||(v.candidates.at(-1)||{}).path||'';
+  o.engine='qwen';o.style=o.emo?sty(o.emo).words:'';o.recipe=sty(o.emo||'neutral').recipe;o.n=2
+  // Hush, hurt and cold read the plain passage: most audition texts are shouted ("...not going to make it!!").
+  o.text=['whisper','sad','crying','vengeful','calm','warm','neutral'].includes(o.emo)?C.passage_default:(v.profile.passage||C.passage_default)}
+ if(o.mode=='mirror'){o.into='';o.kinds='clone,pitch';o.shift=''}
+ if(o.mode=='give')o.to='';
+ if(o.mode=='reread')o.text=o.clean?((v.candidates.find(x=>x.path==o.path)||{}).text||''):v.profile.passage||C.passage_default;
+ CF=o;if(o.at!='pal')CSEL=o.at;draw();
+ const f=document.querySelector('.cform textarea,.cform input:not([type=radio]),.cform select');if(f){f.scrollIntoView({block:'center'});if(o.mode=='restyle'||o.mode=='mirror')f.focus()}}
+function closeCF(){CF=null;draw()}
+function castForm(v,c){const F=CF,what=c?`candidate ${c.n}`:F.path?srcName(v,F.path):'';
+ const head=(t,sub)=>`<div class="row"><b>${t}</b>${sub?`<span class="src">${sub}</span>`:''}<button class="x" style="margin-left:auto" onclick="closeCF()" title="Close (Esc)">✕</button></div>`;
+ if(F.mode=='more'){const now=(v.profile.passage||C.passage_default).trim(),changed=c.text&&c.text!=now;
+  return `<div class="cform acts2"><button onclick="openCF({at:'${c.path}',mode:'restyle',voice:'${v.id}',path:'${c.path}'})" title="New candidates: this voice read another way (shouting, whispering, crying, vengeful…)">✦ Restyle <span class="src">this voice, new delivery</span></button>
+   <button onclick="openCF({at:'${c.path}',mode:'mirror',voice:'${v.id}',path:'${c.path}'})" title="New candidates in another reference's or candidate's voice, keeping this one's timing and intonation">⇄ Mirror <span class="src">this delivery, another voice</span></button>
+   ${c.previews.qwen?`${play(c.previews.qwen,'cloned by Qwen3-TTS')}<button class="mini" onclick="job({kind:'preview',voice:'${v.id}',candidate:${c.n},backend:'qwen'})" title="Make the cloned preview again">redo</button>`:`<button onclick="job({kind:'preview',voice:'${v.id}',candidate:${c.n},backend:'qwen'})" title="Its audition text read by Qwen3-TTS cloning it, as a line's takes are made: how the voice comes through cloning before you choose it (local, a few seconds)">Hear it cloned</button>`}
+   ${warbly(c)?`<button onclick="openCF({at:'${c.path}',mode:'reread',voice:'${v.id}',path:'${c.path}',clean:1})" title="Its own words read again by Qwen3-TTS cloning it: the delivery kept, Seed-VC's warble gone, as a new candidate">↻ Read it again cleanly</button>`:''}
+   <button onclick="openCF({at:'${c.path}',mode:'reread',voice:'${v.id}',path:'${c.path}'})" title="This voice (its original audio, cloned) reading other words, as a new candidate. This one, and the references made from it, stay as they are.">↻ Read new words…</button>
+   <button onclick="openCF({at:'${c.path}',mode:'give',voice:'${v.id}',path:'${c.path}'})">Give to another voice…</button>
+   <button class="danger" onclick="openCF({at:'${c.path}',mode:'del',voice:'${v.id}',path:'${c.path}'})">Delete…</button></div>`}
+ if(F.mode=='use')return `<div class="cform">${head(`Use ${what} as ${esc(v.id)}'s…`,'reference for an emotion: that emotion\'s lines clone it')}
+  <div class="row">${EMO().map(e=>{const r=v.refs.find(x=>x.emotion==e),u=c.uses.find(x=>x.emotion==e&&x.version=='current');
+    return u?`<button class="preset" disabled title="Already ${esc(v.id)}'s ${e} reference: this very audio">${e} ✓</button>`
+     :`<button class="preset ${F.emo==e?'on':''} ${r?'':'nw'}" onclick="CF.emo='${e}';draw()" title="${r?'Replaces the current '+e+' ('+esc(srcLabel(r.source)||'source unknown')+')':esc(v.id)+' has no '+e+' reference yet'}">${e}</button>`}).join('')}</div>
+  ${F.emo?(()=>{const r=v.refs.find(x=>x.emotion==F.emo);return `<div class="row confirm">${r?`It replaces ${esc(v.id)}'s <b>${F.emo}</b> reference ${play(r.path,'hear it')} (${esc(srcLabel(r.source)||'source unknown')}), which is kept in ref/ with a timestamp. Takes already made keep their sound.`:`${esc(v.id)} has no <b>${F.emo}</b> reference yet: its ${F.emo} lines will clone this one.`}
+   <button class="go" onclick="useAs('${v.id}','${c.path}','${F.emo}')">Make ${what} ${F.emo}</button><button onclick="closeCF()">Cancel</button></div>`})():'<div class="src">Choose the emotion. Nothing changes until you confirm.</div>'}</div>`;
+ if(F.mode=='reread')return rereadHtml(v,c);
+ if(F.mode=='give')return `<div class="cform">${head(`Give ${what} to another voice`,'it becomes their next candidate, labelled with where it came from')}
+  ${c.uses.length?`<div class="src">${esc(v.id)}'s ${c.uses.map(u=>u.emotion).join(', ')} reference${c.uses.length>1?'s':''} made from it stay${c.uses.length>1?'':'s'} (copies), but won't point to a candidate here any more.</div>`:''}
+  <div class="row"><select onchange="CF.to=this.value;draw()"><option value="">choose a voice…</option>${C.voices.filter(x=>x.id!=v.id).map(x=>`<option ${F.to==x.id?'selected':''}>${x.id}</option>`).join('')}</select>
+   ${F.to?`<button class="go" onclick="giveTo('${v.id}','${c.path}','${F.to}')">Give it to ${esc(F.to)}</button>`:''}<button onclick="closeCF()">Cancel</button></div></div>`;
+ if(F.mode=='del')return `<div class="cform">${head(`Delete ${what}?`)}<div class="row confirm">It moves to voices/${esc(v.id)}/design/rejected (recoverable).${c.uses.length?` The ${c.uses.map(u=>u.emotion).join(', ')} reference${c.uses.length>1?'s':''} made from it keep their own copy.`:''}
+  <button class="danger" onclick="delCand('${v.id}','${c.path}')">Delete it</button><button onclick="closeCF()">Cancel</button></div></div>`;
+ if(F.mode=='unref')return `<div class="cform">${head(`Remove ${esc(v.id)}'s ${F.emo} reference?`)}<div class="row confirm">${play(F.path,F.emo)} It moves to ref/removed (recoverable). ${afterRemove(v,F.emo)} Takes already made keep their sound.
+  <button class="danger" onclick="delRef('${v.id}','${F.emo}')">Remove it</button><button onclick="closeCF()">Cancel</button></div></div>`;
+ if(F.mode=='mirror')return `<div class="cform">${head(`⇄ Mirror ${what}`,'its delivery (timing, intonation, energy) in another voice: new candidates of that voice (local Seed-VC, about 30 s)')}
+  <div class="row">${play(F.path,what)}<span class="src">into the voice of</span><select onchange="CF.into=this.value;draw()"><option value="">choose a reference or candidate…</option>${intoOptions(F.into,F.path)}</select></div>
+  <div class="row"><span class="src">make</span><select onchange="CF.kinds=this.value;draw()"><option value="clone,pitch" ${F.kinds=='clone,pitch'?'selected':''}>both kinds</option><option value="pitch" ${F.kinds=='pitch'?'selected':''}>pitch: the delivery note for note</option><option value="clone" ${F.kinds=='clone'?'selected':''}>clone: the voice's own pitch</option></select>
+   <span class="src" title="Semitones for the pitch kind. Auto: the difference between the two voices' everyday pitch, so only the voice changes.">pitch shift <input type="number" step="1" style="width:5em" placeholder="auto" value="${esc(F.shift)}" oninput="CF.shift=this.value"> st</span>
+   <button class="go" ${F.into?'':'disabled'} onclick="castMirrorGo()">${F.into?`⇄ Make ${F.kinds=='clone,pitch'?2:1} ${esc(F.into.split('/')[1])} candidate${F.kinds=='clone,pitch'?'s':''}`:'⇄ Mirror'}</button></div></div>`;
+ if(F.mode=='restyle'){const ex=C.editx.why,srcs=[...v.refs.map(r=>[r.path,r.emotion+' reference']),...v.candidates.slice().reverse().map(x=>[x.path,'candidate '+x.n])];
+  return `<div class="cform">${head(`✦ Restyle: ${esc(v.id)}'s voice, a new delivery`,'new candidates that keep this voice (local)')}
+  <div class="row"><span class="src">from</span><select onchange="CF.path=this.value;draw()">${srcs.map(([p,l])=>`<option value="${esc(p)}" ${p==F.path?'selected':''}>${esc(l)}</option>`).join('')}</select>${F.path?play(F.path):''}
+   <span class="src">its voice is kept</span></div>
+  <div class="row">${EMO().map(e=>`<button class="preset ${F.emo==e?'on':''}" title="${esc(sty(e).words)}" onclick="CF.emo='${e}';CF.style=sty('${e}').words;CF.recipe=sty('${e}').recipe;draw()">${e}</button>`).join('')}</div>
+  <div class="eng"><label><input type="radio" name="ceng" ${F.engine=='qwen'?'checked':''} onchange="CF.engine='qwen';draw()"> act it from words (Qwen3-TTS acts, Seed-VC keeps the voice)</label>
+   <label class="${ex?'off':''}" title="${ex?'Not installed: '+esc(ex):'Edits the clip itself: its delivery changes, though its voice can drift (match 0.2-0.6 in tests)'}"><input type="radio" name="ceng" ${F.engine=='editx'?'checked':''} ${ex?'disabled':''} onchange="CF.engine='editx';draw()"> edit the clip (Step-Audio-EditX)</label>
+   ${F.engine=='qwen'?cleanBox('CF',F):''}</div>
+  ${F.engine=='qwen'?`<textarea id="cfs" placeholder="How it should be read, in plain words (or choose an emotion above)" oninput="CF.style=this.value">${esc(F.style)}</textarea>`
+   :`<div class="row"><input id="cfs" style="flex:1;min-width:260px" value="${esc(F.recipe)}" oninput="CF.recipe=this.value" placeholder="emotion:coldness, style:murmur"><span class="src" title="${esc(editsHelp())}">edits in turn (hover for the words it knows; x2 repeats one)</span></div>`}
+  ${ex&&F.engine=='qwen'?`<div class="why">Step-Audio-EditX isn't installed yet: ${esc(ex)}</div>`:''}
+  <div class="row"><span class="src">reads</span><textarea id="cft" oninput="CF.text=this.value" title="What the new candidates say (the audition text by default)">${esc(F.text)}</textarea>
+   ${(()=>{const L=S.filter(l=>l.voice==v.id&&F.emo&&l.emotion==F.emo).slice(0,3);return L.length?`<span class="src">or one of its ${F.emo} lines:</span>${L.map(l=>`<button class="preset" title="${esc(l.text)}" onclick="CF.text=S.find(x=>x.key=='${l.key}').text;draw()">“${esc(short(l.text,40))}”</button>`).join('')}`:''})()}
+   <button class="preset" onclick="CF.text=(C.voices.find(x=>x.id=='${v.id}').profile.passage||C.passage_default);draw()" title="Its audition text">audition text</button></div>
+  <div class="row"><span class="src">keep</span><select onchange="CF.n=+this.value">${[1,2,3,4].map(n=>`<option ${n==F.n?'selected':''}>${n}</option>`).join('')}</select><span class="src">of 3 tries each: the cleanest still in its voice${F.emo?`; offered as ${F.emo} when you use one`:''}</span>
+   <button class="go" onclick="castRestyleGo()">✦ Restyle</button></div></div>`}
+ return ''}
+function rereadHtml(v,c){const F=CF;return `<div class="cform"><div class="row"><b>↻ Candidate ${c.n} ${F.clean?'read again cleanly':'reads new words'}</b><span class="src">${F.clean?`its own words read again by Qwen3-TTS cloning it: its delivery, without Seed-VC's warble, as a new candidate`:'its voice (its original audio, cloned with Qwen3-TTS), as a new candidate'}; candidate ${c.n} and its references stay as they are</span><button class="x" style="margin-left:auto" onclick="closeCF()">✕</button></div>
+  <textarea id="cft" oninput="CF.text=this.value" placeholder="What it reads">${esc(F.text)}</textarea>
+  <div class="row"><button class="go" onclick="rereadGo()">↻ Read it</button><span class="src">a line that pulls the emotion you want (as you write audition texts), then Use as… on the new one</span></div></div>`}
+async function rereadGo(){const F=CF;if(!F||!F.text.trim()){note('Write what it should read first');return}const n=+F.path.match(/cand_(\d+)/)[1];
+ await job({kind:'retry',voice:F.voice,candidate:n,text:F.text});note(`Candidate ${n} reading new words: the new candidate appears at the top when it's done`);CF=null;draw()}
+// What each emotion's lines would clone once this reference is gone (the server's fallback order, workfiles.ref_order).
+function afterRemove(v,gone){const have=new Set(v.refs.map(r=>r.emotion).filter(e=>e!=gone)),next=e=>(C.orders[e]||[]).find(x=>have.has(x));
+ const hit=EMO().filter(e=>e==gone||(!v.refs.some(r=>r.emotion==e)&&v.fallback&&v.fallback[e]==gone)),by={};
+ hit.forEach(e=>{const n=next(e)||'nothing';(by[n]=by[n]||[]).push(e)});
+ return Object.entries(by).map(([n,es])=>n=='nothing'?`Its ${es.join(', ')} lines would have no reference.`:`Its ${es.join(', ')} lines then clone ${n}.`).join(' ')}
+function srcName(v,path){const r=v.refs.find(x=>x.path==path);if(r)return `the ${r.emotion} reference`;const c=v.candidates.find(x=>x.path==path);return c?`candidate ${c.n}`:path}
+async function useAs(voice,path,emotion){CF=null;await post('/api/reference',{voice,path,emotion});note(`Now ${voice}'s ${emotion} reference`)}
+async function giveTo(voice,path,to){CF=null;CSEL=null;const r=await api('/api/candidate/move',{voice,path,to});const y=scrollY;await loadAll();scrollTo(0,y);note('Given: now '+r.moved_to)}
+async function castRestyleGo(){const F=CF;if(!F)return;const v=C.voices.find(x=>x.id==F.voice);
+ if(F.engine=='qwen'&&!F.style.trim()){note('Say how it should be read first (or choose an emotion)');return}
+ await job({kind:'restyle',voice:F.voice,from:F.path,label:srcName(v,F.path),engine:F.engine,style:F.style,recipe:F.recipe,text:F.text,n:F.n,emotion:F.emo||'',raw:!!F.raw});
+ note(`Restyling ${srcName(v,F.path)}: new candidates appear at the top of the list when it's done`);CF=null;draw()}
+async function castMirrorGo(){const F=CF;if(!F||!F.into)return;await job({kind:'mirror',from:F.path,into:F.into,kinds:F.kinds,shift:F.shift});
+ note('Mirroring: new candidates appear in that voice\'s list when it\'s done');CF=null;draw()}
+// What's running for the voice shown.
+function paintJobs(){const e=$('vjobs');if(!e)return;const v=CV,mine=j=>v&&new RegExp(`\\b${v}\\b`).test(j.label);
+ const cur=J.current&&mine(J.current)?[J.current]:[],q=(J.queued||[]).filter(mine);
+ e.innerHTML=cur.length||q.length?`<div class="vj">${cur.map(j=>`<div><span class="spin"></span> ${esc(j.label)} · step ${j.step}/${j.steps} · ${j.secs} s</div>`).join('')}${q.map(j=>`<div class="src">queued: ${esc(j.label)}</div>`).join('')}</div>`:''}
+
+// Voice settings: everything that isn't references or candidates.
+function settings(v){const p=v.profile,eng=v.engine,e=C.engines.find(x=>x.id==eng)||{},cloud=!!e.cloud,needsRef=!cloud;
+ const engOpts=`<option value="" ${p.engine?'':'selected'}>default: ${esc(engLabel(C.default_engine))}</option>`+C.engines.map(x=>`<option value="${x.id}" ${p.engine==x.id?'selected':''}>${esc(x.label)}${x.cloud?' · cloud, paid':' · local'}</option>`).join('');
+ return `<div class="vgrid">
+  <span>engine</span><div class="row"><select data-pf="engine">${engOpts}</select>${cloud?'<span class="warn">sends this voice\'s lines to '+esc(e.label)+' (paid)</span>':''}</div>
+  ${eng=='xai'?`<span>xAI voice</span><div class="row"><input data-pf="xai_voice" list="xaiv" value="${esc(p.xai_voice||'')}" placeholder="ursa" size="12"><label class="src">speed <input data-pf="xai_speed" type="number" step="0.05" min="0.7" max="1.5" value="${p.xai_speed??''}" placeholder="1.0"></label></div>`:''}
+  <span>notes</span><textarea data-pf="notes" rows="1" placeholder="Your notes: casting decisions, what to try next">${esc(p.notes)}</textarea>
+  <span>tuning</span><div class="row"><label class="src" title="Semitones your recordings' &quot;pitch&quot; takes move your voice by (a line can set its own on its card). It should land in this voice's range: a performer speaking around 118 Hz needs about +11 to +14 for an adult woman's voice. Changing it converts this voice's recordings again.">pitch shift <input data-pf="pitch_shift" inputmode="numeric" size="4" value="${p.pitch_shift??''}" title="Semitones; saves when you leave the box"></label></div>
+  <span>your recordings</span><div class="row">${v.tuned
+    ?`<span class="src">${['clone','pitch'].map(k=>v.tuned[k]?`“${k}” takes: tuned ${esc(v.tuned[k].trained)} on ${v.tuned[k].minutes} min`:`“${k}” takes: base model`).join(' · ')}</span>`
+    :'<span class="src">Converted with the base Seed-VC models</span>'}
+   <button class="go" ${v.train_minutes<1?`disabled title="Needs a minute of clean clips (references, and takes with the words right); it has ${v.train_minutes} min"`:`title="Fine-tunes both Seed-VC models (the clone and the pitch takes') on ${v.train_clips} of ${esc(v.id)}'s clips (${v.train_minutes} min: references and takes with the words right), about 25 min, then converts its performances again"`} onclick="if(confirm('Train ${v.id}\'s two Seed-VC models: about 25 minutes on the GPU, and other jobs wait behind it. Go ahead?'))job({kind:'train',voice:'${v.id}'})">${v.tuned?'Retrain':'Train'} on ${v.train_minutes} min…</button>${v.train_minutes>=1&&v.train_minutes<3?'<span class="warn">thin: 3+ min is better</span>':''}</div>
+  <span>takes</span><div class="row"><select class="tn">${[2,4,8].map(n=>`<option ${n==4?'selected':''}>${n}</option>`).join('')}</select>
+   <button class="${cloud?'cl':'go'}" ${needsRef&&!v.refs.length?'disabled title="Choose a reference first"':''} onclick="job({kind:'tts',voice:'${v.id}',n:+this.previousElementSibling.value})">Generate takes for lines without any · ${esc(engLabel(eng))}</button>
+   <button onclick="job({kind:'score',voice:'${v.id}'})">score</button></div></div>`}
+function speakersPane(){const spk=Object.entries(C.speakers).sort((a,b)=>a[0].localeCompare(b[0]));
+ return `<div class="vhead"><span class="vn">Speakers → voices</span><span class="ids">${spk.length} speakers in the script</span></div>
+  <table class="spk">${spk.map(([s,v])=>`<tr><td>${esc(s)}</td><td><select data-speaker="${esc(s)}">${v?'':'<option value="">(none)</option>'}${C.voices.map(x=>`<option ${x.id==v?'selected':''}>${x.id}</option>`).join('')}</select></td></tr>`).join('')}</table>`}
+function pronPane(){return `<div class="vhead"><span class="vn">Pronunciations</span><span class="ids">how text-to-speech says a word in every line; the subtitles keep the script's spelling</span></div>
+  <table class="pron">${C.pronunciations.map(p=>`<tr><td>${esc(p.word)}</td><td>→</td><td><input data-pron="${esc(p.word)}" value="${esc(p.say)}" size="22"></td><td><button class="x" title="Remove: text-to-speech reads it as written" onclick="setPron('${esc(p.word)}','')">✕</button></td></tr>`).join('')}
+   <tr><td><input id="pw" placeholder="word as written, e.g. Canica" size="18"></td><td>→</td><td><input id="ps" placeholder="say it as, e.g. Kanica" size="22"></td><td><button class="go" onclick="setPron($('pw').value,$('ps').value)">Add</button></td></tr></table>
+  <div class="src">New takes use these; takes already made keep how they sound. Changes save into ${esc(C.files.pronunciations)}.</div>`}
+function addPane(){return `<div class="vhead"><span class="vn">Add a cast member</span></div><div class="src" style="margin:6px 0 10px">Each voice is local (on this PC) unless you choose a cloud engine for it. Changes save as you make them, into ${esc(C.files.cast)}.</div>
+  <div class="row"><input id="nv" placeholder="new voice id, e.g. okonkwo" size="20"><input id="nd" placeholder="how they sound" style="flex:1;min-width:200px"><button class="go" onclick="addVoice()">Add cast member</button></div>`}
+async function saveVoice(card,el){const k=el.dataset.pf;let val=el.value;
+ if(k=='engine'&&(C.engines.find(e=>e.id==val)||{}).cloud&&!confirm(`Switch ${card.dataset.voice} to ${engLabel(val)}? Its lines' words go to that service, and it's paid.`)){draw();return}
+ const r=await api('/api/voice',{voice:card.dataset.voice,fields:{[k]:val}});savedFlash(card);
+ if(r.job){$('jobs').classList.add('open');pollJobs()}   // a new pitch shift converts its recordings again
+ if(k=='engine'){const y=scrollY;await loadAll();scrollTo(0,y)}else{C=await api('/api/cast');S=await api('/api/state')}}
+async function setPron(word,say){await api('/api/pronunciation',{word,say});const y=scrollY;await loadAll();scrollTo(0,y)}
+$('cast').addEventListener('change',async e=>{const t=e.target;
+ if(t.dataset.pf){const c=t.closest('[data-voice]');if(c)saveVoice(c,t)}
+ if(t.dataset.pron!==undefined)setPron(t.dataset.pron,t.value)
+ if(t.dataset.speaker!==undefined&&t.value){await api('/api/speaker',{speaker:t.dataset.speaker,voice:t.value});const y=scrollY;await loadAll();scrollTo(0,y)}});
+async function addVoice(){const id=$('nv').value.trim();await api('/api/voice/add',{voice:id,description:$('nd').value});await loadAll();if(id)pickVoice(id)}
+async function delRef(voice,emotion){CF=null;await post('/api/reference/delete',{voice,emotion});note(`Removed ${voice}'s ${emotion} reference (kept in voices/${voice}/ref/removed)`)}
+async function delCand(voice,path){CF=null;CSEL=null;await post('/api/candidate/delete',{voice,path});note('Deleted (kept in design/rejected)')}
+// ref-source: where each reference came from.
+const VERSION={current:'this audio',original:'its older audio, from before a ↻ re-read replaced it',earlier:'its older audio, from before a ↻ re-read replaced it',deleted:'a candidate since deleted'};
+function srcLabel(s){if(!s)return'';if(s.kind=='candidate')return `candidate ${s.n}`+(s.version=='current'?'':s.version=='deleted'?' (deleted)':' (older audio)');
+ if(s.kind=='take')return `take ${s.take.replace('.wav','')} of ${s.line}`;if(s.kind=='recording')return `your recording ${s.name}`;return''}
+function whatLabel(w){if(!w)return'?';if(w.kind=='ref')return `the ${w.emotion} reference`+(w.came?` (${srcLabel(w.came)})`:'');if(w.kind=='take')return `take ${w.take} of ${w.line}`;return `candidate ${w.n}`}
+function note(msg){flash(msg);const e=$('toast');if(e){e.style.background='#173325';e.style.borderColor='var(--ok)'}}
+
+// ------------------------------------------------------------------ Timeline
+// One group (a mission, a scene, a chapter) as a player hears it, from the project's timeline hook: its lines on the
+// player's clock, exchanges boxed together, each with what sets it off and what is happening around it, and the
+// project's events between them. ▶ from here plays the picked takes in turn at their moments, quiet stretches over
+// 3 s cut to 3 s. The shape the hook returns: docs/details/timeline-details.md.
+let TL={g:'',o:{},show:{},d:null,err:'',busy:false,focus:'',edit:'',end:1};
+try{const o=JSON.parse(localStorage.getItem('vs_tl')||'{}');['g','o','show'].forEach(k=>{if(o[k]!=null)TL[k]=o[k]})}catch(e){}
+function saveTL(){try{localStorage.setItem('vs_tl',JSON.stringify({g:TL.g,o:TL.o,show:TL.show}))}catch(e){}}
+const PAL=['#ffb454','#5fd38d','#c79bff','#ff6b6b','#f2e35c','#4fd1c5','#ff8fc7','#9fb4ff','#ff9e6b','#b5e48c','#d4a5ff','#e8c07d'];
+// A speaker keeps the color the project gives it (speaker_colors); anyone else takes one by name.
+function spkColor(s){s=String(s||'').replace(/\s*\(.*\)$/,'');const C0=(TL.d&&TL.d.speaker_colors)||{};if(C0[s])return C0[s];let h=7;for(const ch of s)h=(h*31+ch.charCodeAt(0))>>>0;return PAL[h%PAL.length]}
+const mmss=t=>t==null?'':`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
+const sIndex=()=>{const m={};S.forEach(l=>l.ids.forEach(i=>m[i]=l));return m};
+const tlGroups=()=>(C.groups||[]).filter(g=>g.timeline);
+const groupTitle=id=>((C.groups||[]).find(g=>String(g.id)==String(id))||{}).title||id;
+const kindOf=(T,k)=>(T.kinds||{})[k]||{};
+const shownOn=id=>TL.show[id]!==0;
+function flagHtml(f){return `<span class="flag" title="${esc(f.why||'')}">${esc(f.label)}</span>`}
+async function loadTimeline(replay){if(TL.busy)return;TL.busy=true;if(!TL.g&&tlGroups().length)TL.g=tlGroups()[0].id;if(tab=='timeline'&&!TL.d)drawTimeline();
+ try{const q={group:TL.g,replay:replay?1:0};for(const[k,v]of Object.entries(TL.o))q['opt.'+k]=v;
+  const j=await api('/api/timeline?'+new URLSearchParams(q));
+  TL.d=j;if(j.group!=null)TL.g=String(j.group);TL.err='';saveTL();if(tab=='timeline')try{history.replaceState(null,'','#timeline/'+encodeURIComponent(TL.g))}catch(e){}
+  if(replay)note('Made again')}
+ catch(e){TL.err=String(e.message||e);TL.d=null}
+ TL.busy=false;if(tab=='timeline')drawTimeline()}
+function tlControls(){const T=TL.d,gs=tlGroups();
+ const box=(id,label,tip)=>`<label title="${esc(tip||'')}"><input type="checkbox" ${shownOn(id)?'checked':''} onchange="TL.show[${esc(JSON.stringify(id))}]=this.checked?1:0;saveTL();drawTimeline()"> ${esc(label)}</label>`;
+ const sel=o=>`<select onchange="TL.o[${esc(JSON.stringify(o.id))}]=this.value;loadTimeline()" title="${esc([o.about||'',...(o.choices||[]).filter(c=>c.about).map(c=>c.label+': '+c.about)].filter(Boolean).join('\n'))}">${(o.choices||[]).map(c=>`<option value="${esc(c.id)}" ${String(c.id)==String(o.value)?'selected':''}>${esc(c.label??c.id)}</option>`).join('')}</select>`;
+ return `<select onchange="TL.g=this.value;TL.focus='';TL.d=null;loadTimeline()" title="Which group">${gs.map(g=>`<option value="${esc(g.id)}" ${String(g.id)==String(TL.g)?'selected':''}>${esc(g.title)}</option>`).join('')||'<option>…</option>'}</select>
+ ${T?(T.options||[]).map(sel).join(' '):''}
+ ${T&&T.lines.some(l=>l.minor)?box('minor',T.minor_label||'minor lines',T.minor_about):''}
+ ${T?(T.filters||[]).map(f=>box(f.id,f.label,f.about)).join(' '):''}
+ ${T&&T.replay?`<button onclick="loadTimeline(1)" title="${esc(T.replay.about||'')}">${esc(T.replay.label||'↻ Make again')}</button>`:''}`}
+// Events of a kind with `merge` seconds set run together into one row ("a, b, c") when each follows the last that soon.
+function mergeRuns(T,evs){const out=[];for(const e of evs){const p=out[out.length-1],m=kindOf(T,e.kind).merge;
+  if(m&&p&&p.kind==e.kind&&p.names&&e.t-p.t1<=m){p.names.push(e.text);p.t1=e.t;continue}out.push(m?{...e,names:[e.text],t1:e.t}:e)}return out}
+function drawTimeline(){drawGame();const T=TL.d,el=$('timeline');$('tf').innerHTML=tlControls();
+ if(!tlGroups().length&&!T){$('count').textContent='';el.innerHTML='<div class="src" style="margin-top:12px">This project has no timeline (its adapter has no timeline hook: see docs/details/timeline-details.md).</div>';return}
+ if(!T&&!TL.err&&!TL.busy){loadTimeline();return}
+ if(!T){$('count').textContent='';el.innerHTML=TL.err?`<div class="err" style="margin-top:12px">${esc(TL.err)}</div>`:'<div class="src" style="margin-top:12px">Making the timeline…</div>';return}
+ const SI=sIndex(),L=T.lines.filter(l=>shownOn('minor')||!l.minor),evs=T.events||[],end0=T.end||{};
+ const end=TL.end=Math.max(end0.t||0,...T.lines.map(l=>l.end||l.at||l.arrive||0),...evs.map(e=>e.t1||e.t||0),1);
+ const E=mergeRuns(T,evs.filter(e=>{const f=kindOf(T,e.kind).filter;return !f||shownOn(f)}));
+ const items=[...E.map(e=>({k:'ev',t:e.t,end:kindOf(T,e.kind).strip=='span'?e.t1:e.t,e})),...L.map(l=>({k:'line',t:l.start??l.at??l.arrive,end:l.end??l.at??l.arrive,l})),...(end0.t!=null?[{k:'end',t:end0.t,end:end0.t}]:[])]
+  .sort((a,b)=>a.t-b.t||(a.k=='line')-(b.k=='line')||(a.k=='end')-(b.k=='end'));
+ // Exchanges: the lines the project gives one `ex` boxed together, with what happens among them.
+ const X={};L.forEach(l=>{if(l.start==null||l.ex==null)return;const x=X[l.ex]=X[l.ex]||{n:0,t0:l.start,t1:l.start,who:[]};x.n++;x.t1=Math.max(x.t1,l.start);if(x.who[x.who.length-1]!=l.speaker)x.who.push(l.speaker)});
+ let h='',open=null,last=0;
+ for(const it of items){
+  if(open!=null&&(it.t>X[open].t1+.01||it.k=='line'&&it.l.ex!=open)){h+='</div>';open=null}
+  const gap=it.t-last;if(gap>=8)h+=`<div class="tlgap" style="height:${Math.min(56,10+gap*.5)}px">${Math.round(gap)} s</div>`;
+  if(it.k=='line'&&open==null&&it.l.ex!=null&&X[it.l.ex]&&X[it.l.ex].n>1&&it.l.start!=null){open=it.l.ex;const x=X[open];
+   h+=`<div class="tlx"><div class="tlxh">${x.who.map(w=>`<b style="color:${spkColor(w)};font-weight:600">${esc(w)}</b>`).join(' → ')} · ${x.n} lines</div>`}
+  h+=it.k=='line'?tlLine(it.l,SI[it.l.id],T):it.k=='ev'?tlEv(it.e,T):tlEnd(T);last=Math.max(last,it.end??it.t)}
+ if(open!=null)h+='</div>';
+ const mine=new Set(T.lines.map(l=>SI[l.id]).filter(Boolean)),pend=[...mine].filter(s=>s.pending||s.pick_pending).length;
+ const spk=[...new Set(L.map(l=>l.speaker.replace(/\s*\(.*\)$/,'')))];
+ const kinds=Object.entries(T.kinds||{}).filter(([,k])=>k.strip&&k.strip!='none');
+ el.innerHTML=`${SC?sceneBar():''}<div class="tlhead"><div class="tltitle">${esc(T.title||TL.g)}</div>
+  ${T.summary?`<div class="tlsum">${esc(T.summary)}</div>`:''}
+  ${(T.notes||[]).map(n=>`<div class="tlnote">${esc(n)}</div>`).join('')}
+  ${pend?`<div class="tlnote">${pend} line${pend>1?'s':''} here ${pend>1?'have':'has'} words or a pick the game doesn't have yet: their moments are the game's until ${esc(C.apply_label||'Apply')}.</div>`:''}</div>
+  ${tlMap(T,L,E,end)}
+  <div class="tlleg">${spk.map(s=>`<span><i style="background:${spkColor(s)}"></i>${esc(s)}</span>`).join('')}${T.lines.some(l=>l.est)?`<span title="A line not voiced yet: its length estimated from its words"><i style="background:#8b93a7;opacity:.5"></i>~ not voiced yet</span>`:''}
+   ${kinds.map(([id,k])=>`<span title="${esc(k.about||'')}"><i style="background:${k.color||'#8b93a7'}"></i>${esc(k.label||id)}</span>`).join('')}
+   ${T.track?`<span title="${esc(T.track.about||'')}"><i style="background:${T.track.color||'#5a2a2a'}"></i>${esc(T.track.label||'')}</span>`:''}</div>
+  ${h}
+  ${(T.unheard||[]).length?`<div class="tlunf"><b>${esc(T.unheard_label||'Not heard in this run')}</b>:${T.unheard.map(u=>{const s=SI[u.id];
+   return `<div><b style="color:${spkColor(u.speaker)}">${esc(u.speaker)}</b> “${esc(short(s?s.text:u.id,110))}” ${u.waits?`<span class="src">waits on ${esc(u.waits)}${u.pending?' (still waiting at the end)':''}</span>`:''}${s?` <a class="lnk" href="#lines/${esc(s.key)}">on Lines ↗</a>`:''}</div>`}).join('')}</div>`:''}`;
+ $('count').textContent=`${L.length} lines · ${mmss(end)}`;
+ markScene();
+ if(TL.focus){const f=TL.focus;TL.focus='';const r=document.querySelector(`#timeline .tlrow[data-id="${CSS.escape(f)}"],#timeline .tlrow[data-key="${CSS.escape(f)}"]`);
+  if(r){r.scrollIntoView({block:'center'});flashRow(r)}else note('That line isn\'t heard in this run')}}
+function flashRow(r){r.classList.add('hl');setTimeout(()=>r.classList.remove('hl'),1600)}
+function tlLine(l,s,T){const c=spkColor(l.speaker),gone=l.start==null,key=s?s.key:'',words=s?s.text:(l.words||l.id);
+ const dur=l.start==null||l.end==null?'':`<span class="tdur" title="${l.est?'Not voiced yet: its length estimated from its words':'Its take in the game'}">${l.est?'~':''}${(l.end-l.start).toFixed(1)} s</span>`;
+ const ed=TL.edit==l.id&&s,lag=l.arrive!=null&&l.start!=null?l.start-l.arrive:0;
+ return `<div class="tlrow" data-t="${l.start??l.at??l.arrive}" data-id="${esc(l.id)}" data-key="${esc(key)}"><div class="tt">${mmss(l.start??l.at??l.arrive)}</div>
+  <div class="tlln ${l.minor?'chat':''} ${gone?'gone':''}" style="--c:${c}"><div class="tlh"><span class="spk">${esc(l.speaker)}</span>${s?`<span class="pill" title="How it's played (Lines tab)">${esc(s.emotion)}</span>`:''}${l.minor?`<span class="src" title="${esc(T.minor_about||'')}">${esc(T.minor_label||'minor')}</span>`:''}
+   ${gone?'<span class="flag" title="This run never plays it">never heard</span>':''}${(l.flags||[]).map(flagHtml).join('')}<span class="sp"></span>${dur}
+   ${s&&s.pick?play(s.pick):`<span class="src" title="${s?'No take picked yet':''}">${s?'no pick':''}</span>`}
+   ${gone?'':`<button class="mini" onclick="scene('${esc(l.id)}')" title="Play the scene from this line: each picked take in turn at its moment (quiet stretches over 3 s cut to 3 s; a line without a pick shows for its length, silent). Esc stops.">▶ from here</button>`}
+   ${s?`<a class="lnk" href="#lines/${esc(key)}" title="Its card on the Lines tab: takes, directing, generate">Lines ↗</a>`:''}</div>
+  ${ed?`<div class="wedit"><textarea id="tlwd">${esc(words)}</textarea><div style="display:flex;flex-direction:column;gap:6px"><button class="t" onclick="tlSave('${esc(l.id)}')">save</button><button onclick="TL.edit='';drawTimeline()">cancel</button></div></div>
+   <div class="src">Saves where the project keeps its words, as ✎ edit words does on the Lines tab${s.ids.length>1?` (also ${esc(s.ids.filter(i=>i!=l.id).join(', '))}, which share this recording)`:''}.</div>`
+   :`<div class="tlw">“${esc(words)}”${s?`<button class="ew" onclick="tlEdit('${esc(l.id)}')" title="Rewrite this line's words here, in its moment">✎</button>`:''}</div>`}
+  <div class="tlsub">${l.cause?`<span title="What sets it off">⟵ ${esc(l.cause)}</span>`:''}
+   ${(l.context||[]).map(x=>`<span class="fx">${esc(x)}</span>`).join('')}${lag>1?`<span title="It was ready at ${mmss(l.arrive)} and waited behind other lines">waited ${lag.toFixed(1)} s</span>`:''}
+   ${s&&s.pending?'<span class="pend">new words, not in the game yet</span>':''}${s&&s.pick_pending?'<span class="pend">new pick, not in the game yet</span>':''}${s&&s.note?`<span class="dn" title="Its directing notes (Lines tab): ${esc(s.note)}">${esc(s.note)}</span>`:''}</div></div></div>`}
+function ekStyle(c){c=c||'#8b93a7';return `color:${c};background:${c}26`}
+function tlEv(e,T){const k=kindOf(T,e.kind),label=e.label||(e.names&&e.names.length>1&&k.plural)||k.label||e.kind;
+ const txt=`${e.names?esc(e.names.join(', ')):esc(e.text||'')}${e.detail?` <span class="src">${esc(e.detail)}</span>`:''}`;
+ return `<div class="tlrow ev" data-t="${e.t}"><div class="tt">${mmss(e.t)}</div><div class="tlev"><span class="ek" style="${ekStyle(e.color||k.color)}">${esc(label)}</span><span>${txt} ${(e.flags||[]).map(flagHtml).join('')}</span></div></div>`}
+function tlEnd(T){const e=T.end;return `<div class="tlrow ev" data-t="${e.t}"><div class="tt">${mmss(e.t)}</div><div class="tlev"><span class="ek" style="${ekStyle('#e6e9f0')}">${esc(e.label||'end')}</span><span>${esc(e.text||'')}
+ ${(e.flags||[]).map(flagHtml).join(' ')}</span></div></div>`}
+// The strip above the rows: lines on one row, events by their kind's strip (mark: a short mark; span: a bar from t to
+// t1; tick: a small tick at the bottom; tall: a tall tick), and the project's track drawn under them.
+function tlMap(T,L,E,end){const X=t=>(100*Math.max(0,t)/end).toFixed(3)+'%',step=end>1200?120:end>420?60:30;let h='';
+ for(let t=0;t<end;t+=step)h+=`<div class="tick" style="left:${X(t)}"><span>${mmss(t)}</span></div>`;
+ const P=(T.track&&T.track.points)||[];
+ if(P.length){const mx=Math.max(1e-9,...P.map(p=>p[1]));let path=`M0 36`;P.forEach(([t,a])=>{path+=`L${t} ${36-30*a/mx}`});path+=`L${end} 36Z`;
+  const hl=[];let a0=null;P.forEach(([t,,on])=>{if(on&&a0==null)a0=t;if(!on&&a0!=null){hl.push([a0,t]);a0=null}});if(a0!=null)hl.push([a0,end]);
+  h+=`<svg viewBox="0 0 ${end} 36" preserveAspectRatio="none">${hl.map(([a,b])=>`<rect x="${a}" y="0" width="${b-a}" height="36" fill="${T.track.highlight||'#ff6b6b'}" opacity=".07"/>`).join('')}<path d="${path}" fill="${T.track.color||'#5a2a2a'}" opacity=".85"/></svg>`}
+ h+=L.map(l=>l.start==null?`<div class="lb gone" style="left:${X(l.at??l.arrive??0)}" title="${mmss(l.at??l.arrive)} ${esc(l.speaker)}: never heard"></div>`
+  :`<div class="lb ${l.est?'est':''}" style="left:${X(l.start)};width:${X((l.end??l.start)-l.start)};background:${spkColor(l.speaker)}" title="${mmss(l.start)} ${esc(l.speaker)}${l.est?' (not voiced yet)':''}: ${esc(short(l.words||'',90))}"></div>`).join('');
+ h+=E.map(e=>{const k=kindOf(T,e.kind),c=e.color||k.color||'#8b93a7',tip=`${mmss(e.t)} ${k.label||e.kind}: ${short(e.names?e.names.join(', '):e.text||'',80)}`;
+  if(k.strip=='span')return `<div class="hz" style="left:${X(e.t)};width:${X((e.t1??e.t)-e.t)};background:${c}" title="${esc(tip)}"></div>`;
+  if(k.strip=='tick'||k.strip=='tall'){const n=e.names||[e.text];return n.map((nm,i)=>`<div class="km ${k.strip=='tall'?'lost':''}" style="left:${X(e.t+((e.t1??e.t)-e.t)*i/Math.max(1,n.length-1))};background:${c}" title="${esc(mmss(e.t)+' '+(nm||''))}"></div>`).join('')}
+  if(k.strip=='mark')return `<div class="em" style="left:${X(e.t)};background:${c}" title="${esc(tip)}"></div>`;return ''}).join('');
+ return `<div class="tlmap" onclick="tlSeek(event)" title="">${h}<div class="cur" id="tlcur"></div></div>`}
+function tlSeek(ev){const r=ev.currentTarget.getBoundingClientRect(),t=(ev.clientX-r.left)/r.width*TL.end;
+ const rows=[...document.querySelectorAll('#timeline .tlrow[data-t]')];let best=rows[0];for(const x of rows){if(+x.dataset.t<=t+.01)best=x;else break}
+ if(best){best.scrollIntoView({block:'center',behavior:'smooth'});flashRow(best)}}
+function tlEdit(id){TL.edit=id;drawTimeline();const t=$('tlwd');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}}
+async function tlSave(id){const s=sIndex()[id],text=$('tlwd').value;TL.edit='';if(!s||text.trim()==s.text.trim()){drawTimeline();return}
+ await api('/api/text',{ids:s.ids,text});S=await api('/api/state');await loadTimeline()}
+// The scene, played: each picked take at its moment, in order.
+let SC=null;const SA=new Audio();
+function sceneBar(){const l=SC&&TL.d&&TL.d.lines.find(x=>x.id==SC.id);return `<div class="scene" id="scene"><span class="spin"></span><span id="scenet">${SC.skip?`skipping ${Math.round(SC.skip)} s of quiet`:l?`${mmss(l.start)} ${esc(l.speaker)}`:''}</span><span class="sp" style="flex:1"></span><button onclick="stopScene()" title="Esc">■ Stop</button></div>`}
+function markScene(){document.querySelectorAll('#timeline .tlln.now').forEach(x=>x.classList.remove('now'));const cur=$('tlcur');
+ const bar=$('scene');if(!SC){if(bar)bar.remove();if(cur)cur.style.display='none';return}
+ if(!bar)$('timeline').insertAdjacentHTML('afterbegin',sceneBar());else bar.outerHTML=sceneBar();
+ document.documentElement.style.setProperty('--hh',(document.querySelector('header').offsetHeight+6)+'px');   // under the header, however tall
+ const r=document.querySelector(`#timeline .tlrow[data-id="${CSS.escape(SC.id)}"]`);if(r){r.querySelector('.tlln').classList.add('now');if(SC.moved!==SC.id){SC.moved=SC.id;r.scrollIntoView({block:'center',behavior:'smooth'})}}
+ if(cur){cur.style.display='block';cur.style.left=(100*SC.t/TL.end)+'%'}}
+async function scene(id){stopScene();AU.pause();const T=TL.d;if(!T)return;const SI=sIndex();
+ const L=T.lines.filter(l=>l.start!=null&&(shownOn('minor')||!l.minor)).sort((a,b)=>a.start-b.start);let k=L.findIndex(l=>l.id==id);if(k<0)return;
+ const tok=SC={t:L[k].start,id,skip:0};const wait=ms=>new Promise(r=>{tok.done=r;tok.timer=setTimeout(r,ms)});
+ let prev=L[k].start;
+ for(;k<L.length;k++){const l=L[k],gap=l.start-prev;
+  if(gap>0){tok.skip=gap>3?gap:0;markScene();await wait(Math.min(gap,3)*1000);if(SC!==tok)return}
+  tok.t=l.start;tok.id=l.id;tok.skip=0;markScene();const ms=(l.end-l.start)*1000,s=SI[l.id];
+  if(s&&s.pick){SA.src='/audio?p='+encodeURIComponent(s.pick);try{await SA.play();await new Promise(r=>{tok.done=r;SA.onended=r;tok.timer=setTimeout(r,ms+4000)})}catch(e){await wait(ms)}clearTimeout(tok.timer);SA.onended=null}
+  else await wait(ms);
+  if(SC!==tok)return;prev=l.end}
+ stopScene()}
+function stopScene(){const s=SC;if(!s)return;SC=null;clearTimeout(s.timer);SA.pause();if(s.done)s.done();markScene()}
+
+// ------------------------------------------------------------------ jobs
+let pollT=null;
+async function pollJobs(){clearTimeout(pollT);try{J=await api('/api/jobs')}catch(e){pollT=setTimeout(pollJobs,4000);return}
+ const cur=J.current,q=J.queued.length,done=J.recent[0];
+ $('jdot').className=cur?'spin':'';
+ $('jsum').textContent=cur?`${cur.label} · step ${cur.step}/${cur.steps} · ${cur.secs} s${q?` · ${q} queued`:''}`:(done?`Last: ${done.label} · ${done.ok?'done':'stopped'} (${done.secs} s)`:'No jobs');
+ $('jbody').innerHTML=`${cur?`<div class="jq">running: ${esc(cur.label)} <button onclick="cancelJob(${cur.id})">stop</button></div>`:''}
+  ${J.queued.map(j=>`<div class="jq">queued: ${esc(j.label)} <button onclick="cancelJob(${j.id})">remove</button></div>`).join('')}
+  ${J.recent.slice(0,5).map(j=>`<div class="jq">${j.ok?'✓':'✗'} ${esc(j.label)} · ${j.secs} s</div>`).join('')}
+  <pre id="jlog">${esc(J.log.join('\n'))||'(no output yet)'}</pre>`;
+ paintJobs();
+ const lg=$('jlog');if(lg)lg.scrollTop=lg.scrollHeight;
+ if(done&&lastDone!==null&&done.id!==lastDone){const y=scrollY;await loadAll();scrollTo(0,y);if(tab=='timeline')loadTimeline()}
+ lastDone=done?done.id:0;pollT=setTimeout(pollJobs,cur||q?1500:5000)}
+async function cancelJob(id){await api('/api/job/cancel',{id});pollJobs()}
+
+['voice','group','show'].forEach(id=>$(id).onchange=()=>{sel=0;draw()});$('q').oninput=()=>{sel=0;draw()};
+document.onkeydown=e=>{if(e.key=='Escape'&&REC){stopRec(true);e.preventDefault();return}
+ if(e.key=='Escape'&&SC){stopScene();e.preventDefault();return}
+ if(tab=='timeline'&&e.key=='Escape'&&TL.edit){TL.edit='';drawTimeline();e.preventDefault();return}
+ if(tab=='cast'){if(e.key=='Escape'&&CF){CF=null;draw();e.preventDefault();return}
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;
+  const rows=[...document.querySelectorAll('.cr[data-cand]')].map(x=>x.dataset.cand),i=rows.indexOf(CSEL);
+  if(e.key=='j'||e.key=='ArrowDown'||e.key=='k'||e.key=='ArrowUp'){if(!rows.length)return;const d=e.key=='j'||e.key=='ArrowDown'?1:-1;
+   CSEL=rows[Math.max(0,Math.min(rows.length-1,i<0?0:i+d))];if(CF&&CF.at!='pal')CF=null;draw();
+   const r=document.querySelector(`.cr[data-cand="${CSS.escape(CSEL)}"]`);if(r)r.scrollIntoView({block:'nearest'});e.preventDefault()}
+  if(e.key==' '&&CSEL){const b=document.querySelector(`.cr[data-cand="${CSS.escape(CSEL)}"] .play`);if(b)toggle(b);e.preventDefault()}
+  if(e.key=='['||e.key==']'){const vs=castVoices(),i=vs.findIndex(x=>x.id==CV);const n=vs[Math.max(0,Math.min(vs.length-1,(i<0?0:i)+(e.key==']'?1:-1)))];if(n)pickVoice(n.id);e.preventDefault()}
+  if(e.key=='u'&&CSEL){const v=curVoice();if(v)openCF({at:CSEL,mode:'use',voice:v.id,path:CSEL,emo:''});e.preventDefault()}
+  return}
+ if(tab!='lines'||['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;const L=shown(),l=L[sel];if(!l)return;
+ if(e.key=='r'&&!e.ctrlKey&&!e.metaKey){REC&&REC.key==l.key?stopRec():rec(l.key);e.preventDefault()}
+ if(e.key=='j'||e.key=='ArrowDown'){sel=Math.min(sel+1,L.length-1);mark();$('L'+sel).scrollIntoView({block:'center'});e.preventDefault()}
+ if(e.key=='k'||e.key=='ArrowUp'){sel=Math.max(sel-1,0);mark();$('L'+sel).scrollIntoView({block:'center'});e.preventDefault()}
+ if('123'.includes(e.key)&&e.key.length==1){const t=l.takes[+e.key-1];if(t)pick(l.key,t.path)}
+ if(e.key==' '){const b=$('L'+sel).querySelector('.tk .play');if(b)toggle(b);e.preventDefault()}};
+// Links into the page: #cast, #cast/<voice>, #lines, #lines/<line key>: that tab, that voice or line shown;
+// #timeline/<group>/<line key or id>: that group's timeline, at that line.
+function applyHash(){const h=decodeURIComponent(location.hash.slice(1)).split('&')[0];if(!h)return;const [t,arg,at]=h.split('/');
+ if(t=='timeline'){tab=t;if(arg&&arg!=TL.g){TL.g=arg;TL.d=null}TL.focus=at||'';draw();loadTimeline();return}
+ if(t!='cast'&&t!='lines')return;tab=t;
+ if(t=='lines'&&arg&&S.some(l=>l.key==arg||l.ids.includes(arg))){$('show').value='all';$('q').value='';$('voice').value='';$('group').value='';
+  sel=Math.max(0,shown().findIndex(l=>l.key==arg||l.ids.includes(arg)))}
+ if(t=='cast'&&arg&&arg!=CV){CSEL=null;CF=null;candFilter='all';CV=arg;try{localStorage.setItem('vs_cv',arg)}catch(e){}}draw();
+ if(t=='cast'){scrollTo(0,0);return}const e=$('L'+sel);if(arg&&e)e.scrollIntoView({block:'center'})}
+window.addEventListener('hashchange',applyHash);
+loadAll().then(applyHash).then(pollJobs);listMics();
+</script></body></html>

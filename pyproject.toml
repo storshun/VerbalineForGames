@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "verbaline-for-games"
+version = "0.1.0"
+description = "A local page for directing, voicing and picking every line of a game's dialogue, with open models"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = ["numpy", "scipy", "soundfile", "pyloudnorm", "tomlkit"]
+
+[project.optional-dependencies]
+# Recording from the mic, and scoring takes (what a take says, whose voice it is, how clean it is).
+record = ["sounddevice"]
+score = ["faster-whisper", "speechbrain", "torchaudio"]
+# Text-to-speech with Qwen3-TTS (cloning and VoiceDesign). Other engines live in their own checkouts and Pythons:
+# docs/details/install-details.md.
+qwen = ["qwen-tts"]
+
+[project.scripts]
+verbaline = "verbaline.cli:main"
+
+[tool.setuptools]
+packages = ["verbaline", "verbaline.runners"]
+
+[tool.setuptools.package-data]
+verbaline = ["page.html", "defaults.toml"]

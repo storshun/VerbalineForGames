@@ -1,0 +1,13 @@
+# A project hooked up through a Python adapter: the lines come from the game's own scene script, word edits go back
+# into it, Apply writes the game's voice table, and the Timeline tab shows each scene as the player hears it.
+# docs/HookingUpAProject.md ("An adapter") walks through it; docs/details/project-api-details.md has every hook.
+
+[project]
+name = "Night Ferry"
+
+[lines]
+adapter = "verbaline_adapter.py"
+
+[apply]
+label = "Apply to game"
+about = "Copies the picked takes into game/vo and rewrites game/vo_table.json"

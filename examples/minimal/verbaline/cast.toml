@@ -1,0 +1,13 @@
+# Who sounds like what. The page's Cast tab edits this file (keeping its comments).
+# [speakers]: a speaker in the lines -> a voice id. [voices.<id>]: description (voice design reads it), engine
+# ("qwen", local, or "xai", cloud and paid), pitch_shift, notes. docs/details/project-api-details.md has every field.
+
+[speakers]
+"Keeper" = "keeper"
+"Radio" = "gull"
+
+[voices.keeper]
+description = "A weathered woman in her sixties, low and dry, Scottish, unhurried; warm under the gruffness."
+
+[voices.gull]
+description = "A young man on a ship's radio, Irish, clipped and nervous, trying to sound calm."

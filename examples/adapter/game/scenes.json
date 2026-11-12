@@ -1,0 +1,16 @@
+{
+  "scenes": [
+    {"id": "dock", "title": "Scene 1: The dock", "beats": [
+      {"id": "dock_01", "who": "Purser", "say": "Last call for the night ferry! Tickets out, please.", "after": 0, "mood": "shouting"},
+      {"id": "dock_02", "who": "Ada", "say": "One, to the island. Is it always this foggy?", "after": 1.5},
+      {"id": "dock_03", "who": "Purser", "say": "Only on the nights that matter, miss.", "after": 0.6, "mood": "playful"},
+      {"event": "horn", "text": "The ferry's horn sounds twice", "after": 2.0},
+      {"id": "dock_04", "who": "Ada", "say": "Did you hear that? Something answered the horn.", "after": 1.0, "mood": "whisper"}
+    ]},
+    {"id": "deck", "title": "Scene 2: On deck", "beats": [
+      {"id": "deck_01", "who": "Ada", "say": "There's someone standing at the bow.", "after": 0, "mood": "urgent"},
+      {"event": "choice", "text": "Call out / Stay quiet", "after": 1.0},
+      {"id": "deck_02", "who": "Stranger", "say": "You shouldn't be up here. Go below.", "after": 2.5, "mood": "calm"}
+    ]}
+  ]
+}

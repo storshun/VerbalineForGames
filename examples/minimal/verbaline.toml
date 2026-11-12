@@ -1,0 +1,18 @@
+# The smallest hook-up: a lines file the studio reads (and writes word edits back into), and Apply copying the picked
+# takes and a manifest into the game's folder. docs/HookingUpAProject.md walks through it.
+
+[project]
+name = "Lighthouse"                # the page's title
+# work_dir = "~/Lighthouse_VO"     # takes and references are big WAVs: keep them outside the repo (default .verbaline/)
+
+[lines]
+file = "dialogue/lines.toml"
+
+[groups]
+intro = "The intro"
+storm = "The storm"
+
+[apply]
+label = "Copy to game"
+about = "Masters the picked takes and copies them, with manifest.json, into game/audio/vo"
+copy_to = "game/audio/vo"

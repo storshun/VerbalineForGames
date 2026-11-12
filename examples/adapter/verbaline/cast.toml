@@ -1,0 +1,15 @@
+# Who sounds like what (the page's Cast tab edits this file). docs/details/project-api-details.md has every field.
+
+[speakers]
+"Ada" = "ada"
+"Purser" = "purser"
+"Stranger" = "stranger"
+
+[voices.ada]
+description = "A woman in her late twenties, American, quick and wry, a little out of breath."
+
+[voices.purser]
+description = "An old ship's purser, gravelly baritone, Cornish, booming at a crowd but kind up close."
+
+[voices.stranger]
+description = "A quiet, flat voice of no clear age or accent, close to the ear, never raised."

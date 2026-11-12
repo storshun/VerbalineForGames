@@ -1,0 +1,4 @@
+# How text-to-speech should say words it would otherwise mangle, in every line: the subtitle's word = what the model
+# reads. The page's Cast tab (Pronunciations) edits this file.
+
+[say]

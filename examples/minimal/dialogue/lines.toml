@@ -1,0 +1,28 @@
+# Every spoken line. id names the files (letters, digits, _ . -), speaker is who says it (the cast maps speakers to
+# voices), text is the subtitle. group, emotion and context are optional.
+
+[[line]]
+id = "intro_hello"
+group = "intro"
+speaker = "Keeper"
+text = "Another night on the rock. Light's lit, kettle's on."
+
+[[line]]
+id = "intro_radio"
+group = "intro"
+speaker = "Radio"
+text = "Lighthouse, this is the Gull. Do you read?"
+context = "Crackly, far away."
+
+[[line]]
+id = "storm_warning"
+group = "storm"
+speaker = "Keeper"
+text = "Get those shutters down! It's coming in fast!"
+emotion = "shouting"
+
+[[line]]
+id = "storm_after"
+group = "storm"
+speaker = "Keeper"
+text = "Gull, come in! ...Gull?"
