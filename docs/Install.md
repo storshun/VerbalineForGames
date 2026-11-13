@@ -13,7 +13,8 @@ a machine's config never names a game.
 The page can run by hand (`verbaline serve`) or as a background service that's always up, one per project, each on
 its own port.
 
-It runs on Linux and Windows. On Windows the steps are the same with Windows paths and PyTorch from pytorch.org;
+It runs on Linux and Windows. On Windows the steps are the same with Windows paths and PyTorch from pytorch.org,
+the work folder belongs outside OneDrive, and ids avoid the names Windows reserves (the studio checks on every system);
 Step-Audio-EditX and the service script are Linux only.
 
 ## Expected outcome

@@ -7,6 +7,7 @@ live: hand edits, agents and the page all see the same thing. Where they live is
 import re
 from pathlib import Path
 import tomlkit
+from verbaline import workfiles
 
 PROJECT = None
 
@@ -32,13 +33,13 @@ LINE_FIELDS = ('voice', 'emotion', 'note', 'say', 'engine', 'pitch_shift', 'part
 
 def _load(name):
     p = _path(name)
-    return tomlkit.parse(p.read_text(encoding='utf-8-sig')) if p.exists() else tomlkit.document()
+    return tomlkit.parse(workfiles.read_user_text(p)) if p.exists() else tomlkit.document()
 
 
 def _save(name, doc):
     text = re.sub(r'\n{3,}', '\n\n', tomlkit.dumps(doc)).rstrip('\n') + '\n'   # removed tables leave blank lines
     p = _path(name); p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_suffix('.tmp'); tmp.write_text(text, encoding='utf-8'); tmp.replace(p)
+    tmp = p.with_suffix('.tmp'); tmp.write_text(text, encoding='utf-8'); workfiles.replace(tmp, p)
 
 
 def set_voice(voice, fields):
@@ -58,6 +59,7 @@ def set_voice(voice, fields):
 def add_voice(voice, description=''):
     """A new cast member's voice profile."""
     if not VOICE_ID.match(voice): raise ValueError('a voice id is lowercase letters, digits and _, like "okafor"')
+    if why := workfiles.name_problem(voice): raise ValueError(f'voice id {why}: it names a folder, so choose another')
     doc = _load('cast.toml')
     if 'voices' not in doc: doc['voices'] = tomlkit.table(is_super_table=True)
     if voice in doc['voices']: raise ValueError(f'"{voice}" already exists')

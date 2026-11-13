@@ -22,6 +22,8 @@ join, and its level, is the mix (parts/mix.json)."""
 import hashlib, json, re, time
 from pathlib import Path
 
+from verbaline import workfiles
+
 EMOTIONS = ('neutral', 'calm', 'urgent', 'shouting', 'whisper', 'sad', 'warm', 'playful', 'stunned', 'angry', 'crying',
             'vengeful')                                    # as cli.EMOTIONS
 ALIASES = {
@@ -132,7 +134,7 @@ def made(work, key, pid):
 def note_try(work, key, pid, name, **info):
     f = folder(work, key, pid) / 'made.json'; m = made(work, key, pid)
     m[name] = dict(info, at=time.strftime('%Y-%m-%d %H:%M'))
-    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1), encoding='utf-8'); tmp.replace(f)
+    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1), encoding='utf-8'); workfiles.replace(tmp, f)
 
 
 def mix(work, key):
@@ -143,7 +145,7 @@ def mix(work, key):
 
 def save_mix(work, key, m):
     f = folder(work, key) / 'mix.json'; f.parent.mkdir(parents=True, exist_ok=True)
-    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1), encoding='utf-8'); tmp.replace(f)
+    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1), encoding='utf-8'); workfiles.replace(tmp, f)
 
 
 def chosen(work, key, pid):
@@ -261,5 +263,5 @@ def join_line(c, r, picks=None):
     f = Path(work) / 'takes' / key / 'made.json'; m = json.loads(f.read_text(encoding='utf-8')) if f.exists() else {}
     m[out.name] = dict(text=r['text'], at=time.strftime('%Y-%m-%d %H:%M'), parts=recipe, secs=round(secs, 2),
                        **({'ref': longest['ref']} if longest['ref'] else {}))
-    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1), encoding='utf-8'); tmp.replace(f)
+    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1), encoding='utf-8'); workfiles.replace(tmp, f)
     return out

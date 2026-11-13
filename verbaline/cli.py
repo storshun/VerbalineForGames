@@ -51,7 +51,7 @@ def ref_order(emotion):
 def load_toml(path):
     path = Path(path)
     if not path.exists(): return {}
-    return tomllib.loads(path.read_text(encoding='utf-8-sig'))
+    return tomllib.loads(workfiles.read_user_text(path))
 
 
 class Ctx:
@@ -100,7 +100,7 @@ class Ctx:
     def json(self, name, default):
         p = self.path(name); return json.loads(p.read_text(encoding='utf-8')) if p.exists() else default
     def save_json(self, name, data):
-        p = self.path(name); tmp = p.with_suffix('.tmp'); tmp.write_text(json.dumps(data, indent=1), encoding='utf-8'); tmp.replace(p)
+        p = self.path(name); tmp = p.with_suffix('.tmp'); tmp.write_text(json.dumps(data, indent=1), encoding='utf-8'); workfiles.replace(tmp, p)
     def export_name(self, r):
         """An exported pick's file name: [master] name, from the line's fields."""
         return self.cfg['master'].get('name', '{id}').format(id=r['id'], key=r['key'], lang=self.lang, group=r.get('group', ''),
@@ -154,6 +154,8 @@ def cmd_lines(c, a):
             try: r['say'] = tts_text(lineparts.plain(lineparts.parse(r['parts'], r['emotion'])), c.say)
             except ValueError as e: print(f'  {r["id"]}: its parts can\'t be read ({e}): no takes until they\'re fixed')
     stale = sorted(set(c.dirs) - {r['id'] for r in rows})
+    for v in sorted({r['voice'] for r in rows}):
+        if why := workfiles.name_problem(v): sys.exit(f'voice id {why}: it names a folder of the work folder; rename it in the cast')
     with open(c.path('lines.csv'), 'w', newline='', encoding='utf-8') as f:
         w = csv.DictWriter(f, fieldnames=COLUMNS); w.writeheader(); w.writerows(rows)
     c.save_json('groups.json', c.project.groups(c, rows))
@@ -689,10 +691,10 @@ def cmd_choose(c, a):
 def promote(c, src, voice, emotion, text):
     dst = c.path('voices', voice, 'ref', emotion + '.wav'); dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists():
-        old = dst.with_name(f'{emotion}_{time.strftime("%Y%m%d-%H%M%S")}.wav'); dst.replace(old)
-        if dst.with_suffix('.json').exists(): dst.with_suffix('.json').replace(old.with_suffix('.json'))
+        old = dst.with_name(f'{emotion}_{time.strftime("%Y%m%d-%H%M%S")}.wav'); workfiles.replace(dst, old)
+        if dst.with_suffix('.json').exists(): workfiles.replace(dst.with_suffix('.json'), old.with_suffix('.json'))
         # Its transcript goes with it (until Nov 6 it was overwritten, so a kept reference lost the words Qwen reads).
-        if dst.with_suffix('.txt').exists(): dst.with_suffix('.txt').replace(old.with_suffix('.txt'))
+        if dst.with_suffix('.txt').exists(): workfiles.replace(dst.with_suffix('.txt'), old.with_suffix('.txt'))
         print(f'  kept the old one as {old.name}')
     shutil.copy2(src, dst); dst.with_suffix('.txt').write_text(text.strip(), encoding='utf-8')
     workfiles.note_source(c.work, voice, src, dst)             # ref-source: which candidate or take it came from
@@ -846,7 +848,10 @@ def train_model(c, a, seed, v, kind, data, clips, mins):
            '--dataset-dir', str(data), '--run-name', run.name, '--batch-size', str(batch), '--max-steps', str(steps),
            '--max-epochs', '100000', '--save-every', str(steps + 1), '--num-workers', '0']
     slot = Path(os.path.expanduser(t.get('gpu_slot', '')))   # a GPU-slot script ([train] gpu_slot), so another GPU job can't run it out of memory
-    if t.get('gpu_slot') and slot.exists(): cmd = [str(slot), '--need', '10000', *cmd]
+    if t.get('gpu_slot') and slot.exists():
+        if os.name == 'nt' and slot.suffix.lower() not in ('.exe', '.bat', '.cmd'):
+            print(f'  [train] gpu_slot is {slot.name}, which Windows can\'t run: training without it', flush=True)
+        else: cmd = [str(slot), '--need', '10000', *cmd]
     env = dict(os.environ, HF_HUB_CACHE='./checkpoints/hf_cache', HF_HUB_OFFLINE='1')
     t0 = time.time(); tail = collections.deque(maxlen=25)
     p = subprocess.Popen(cmd, cwd=seed.repo, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
@@ -864,7 +869,7 @@ def train_model(c, a, seed, v, kind, data, clips, mins):
     if (d / 'model.pth').exists():                           # the model it replaces stays, one back
         (d / 'previous').mkdir(exist_ok=True)
         for f in ('model.pth', 'config.yml', 'model.json'):
-            if (d / f).exists(): (d / f).replace(d / 'previous' / f)
+            if (d / f).exists(): workfiles.replace(d / f, d / 'previous' / f)
     shutil.move(made, d / 'model.pth'); shutil.copy2(run / preset, d / 'config.yml'); shutil.rmtree(run)
     (d / 'model.json').write_text(json.dumps(dict(f0=f0, steps=steps, clips=len(clips), minutes=round(mins, 1),
                                                   trained=time.strftime('%Y-%m-%d %H:%M'), secs=round(time.time() - t0)), indent=1), encoding='utf-8')

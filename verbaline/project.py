@@ -11,8 +11,10 @@ Two ways to hook up:
     project's own command.
   - a Python adapter module (verbaline.toml [lines] adapter): any of the hooks in HOOKS, each optional but lines.
     Hooks it doesn't define fall back to the lines file's (when it names one) or the studio's own defaults."""
-import csv, importlib.util, json, os, re, shutil, sys, time, tomllib
+import csv, importlib.util, io, json, os, re, shutil, sys, time, tomllib
 from pathlib import Path
+
+from verbaline import workfiles
 
 CONFIG_NAME = 'verbaline.toml'
 HERE = Path(__file__).resolve().parent
@@ -22,7 +24,7 @@ HOOKS = ('lines', 'groups', 'set_words', 'game_state', 'apply', 'timeline', 'wat
 
 def read_toml(path):
     """A TOML file, read as UTF-8 whatever the system's code page (a byte-order mark from Windows editors is fine)."""
-    return tomllib.loads(Path(path).read_text(encoding='utf-8-sig'))
+    return tomllib.loads(workfiles.read_user_text(path))
 
 
 def merge(base, over):
@@ -97,13 +99,16 @@ class Project:
         docs/details/project-api-details.md, "A line")."""
         fn = self.hook('lines')
         out = list(fn(ctx)) if fn else FileLines(self.lines_file).lines()
-        seen = set()
+        seen, lower = set(), {}
         for i, l in enumerate(out):
             for k in ('id', 'speaker', 'text'):
                 if not str(l.get(k) or '').strip(): raise ValueError(f'line {i + 1} ({l.get("id", "?")}) has no {k}')
             if not re.fullmatch(r'[A-Za-z0-9_.-]+', l['id']): raise ValueError(f'line id "{l["id"]}": letters, digits, _ . - only (it names files)')
             if l['id'] in seen: raise ValueError(f'line id "{l["id"]}" is used twice')
-            seen.add(l['id'])
+            if why := workfiles.name_problem(l['id']): raise ValueError(f'line id {why}: it names files, so choose another')
+            # Windows and macOS don't tell file names apart by case: "Intro" and "intro" would share one folder.
+            if same := lower.get(l['id'].lower()): raise ValueError(f'line ids "{same}" and "{l["id"]}" differ only in case: they would share files on Windows and macOS')
+            seen.add(l['id']); lower[l['id'].lower()] = l['id']
         return out
 
     def groups(self, ctx, lines):
@@ -201,9 +206,9 @@ class FileLines:
 
     def lines(self):
         if self.kind == 'csv':
-            with open(self.path, newline='', encoding='utf-8-sig') as f: return [{k: v for k, v in r.items() if v not in (None, '')} for r in csv.DictReader(f)]
+            return [{k: v for k, v in r.items() if v not in (None, '')} for r in csv.DictReader(io.StringIO(workfiles.read_user_text(self.path, csv=True), newline=''))]
         if self.kind == 'json':
-            d = json.loads(self.path.read_text(encoding='utf-8-sig'))
+            d = json.loads(workfiles.read_user_text(self.path))
         else:
             d = read_toml(self.path)
         if isinstance(d, dict) and isinstance(d.get('line'), list): d = d['line']
@@ -215,7 +220,7 @@ class FileLines:
         ids = set(ids); n = 0
         if self.kind == 'toml':
             import tomlkit
-            doc = tomlkit.parse(self.path.read_text(encoding='utf-8-sig'))
+            doc = tomlkit.parse(workfiles.read_user_text(self.path))
             if isinstance(doc.get('line'), list):                     # [[line]] tables, each with its id
                 for t in doc['line']:
                     if t.get('id') in ids: t['text'] = text; n += 1
@@ -224,7 +229,7 @@ class FileLines:
                     if k in ids and isinstance(doc[k], dict): doc[k]['text'] = text; n += 1
             out = tomlkit.dumps(doc)
         elif self.kind == 'json':
-            d = json.loads(self.path.read_text(encoding='utf-8-sig')); items = d['line'] if isinstance(d, dict) and isinstance(d.get('line'), list) else \
+            d = json.loads(workfiles.read_user_text(self.path)); items = d['line'] if isinstance(d, dict) and isinstance(d.get('line'), list) else \
                 d['lines'] if isinstance(d, dict) and isinstance(d.get('lines'), list) else d
             if isinstance(items, list):
                 for x in items:
@@ -233,13 +238,12 @@ class FileLines:
                 for k in ids & set(items): items[k]['text'] = text; n += 1
             out = json.dumps(d, indent=2, ensure_ascii=False) + '\n'
         else:
-            with open(self.path, newline='', encoding='utf-8-sig') as f: rows = list(csv.DictReader(f)); fields = list(rows[0]) if rows else ['id', 'speaker', 'text']
+            rows = list(csv.DictReader(io.StringIO(workfiles.read_user_text(self.path, csv=True), newline=''))); fields = list(rows[0]) if rows else ['id', 'speaker', 'text']
             for r in rows:
                 if r.get('id') in ids: r['text'] = text; n += 1
-            import io
             buf = io.StringIO(); w = csv.DictWriter(buf, fields, lineterminator='\n'); w.writeheader(); w.writerows(rows); out = buf.getvalue()
         if not n: raise ValueError(f'no line {", ".join(sorted(ids))} in {self.path.name}')
-        tmp = self.path.with_suffix(self.path.suffix + '.tmp'); tmp.write_text(out, encoding='utf-8'); tmp.replace(self.path)
+        tmp = self.path.with_suffix(self.path.suffix + '.tmp'); tmp.write_text(out, encoding='utf-8'); workfiles.replace(tmp, self.path)
 
 
 # ------------------------------------------------------------------ Apply's manifest
@@ -259,5 +263,5 @@ def write_manifest(ctx, rows, picks, export_dir, name_of):
                               key=r['key'], take=p['take'], seconds=round(sf.info(str(f)).duration, 3))
     m = dict(project=ctx.project.name, language=ctx.lang, made=time.strftime('%Y-%m-%d %H:%M:%S'), lines=lines)
     out = Path(export_dir) / 'manifest.json'; tmp = out.with_suffix('.tmp')
-    tmp.write_text(json.dumps(m, indent=1, ensure_ascii=False), encoding='utf-8'); tmp.replace(out)
+    tmp.write_text(json.dumps(m, indent=1, ensure_ascii=False), encoding='utf-8'); workfiles.replace(tmp, out)
     return out

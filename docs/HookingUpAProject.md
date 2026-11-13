@@ -6,7 +6,8 @@ A project is any folder with a `verbaline.toml` at its root: usually a game's re
 three things, and everything else (voices, references, takes, scores, picks) the studio keeps for itself:
 
 1. **Where the lines are.** Every spoken line: an id, who says it, and its words. Optionally a group (a scene, a
-   mission, a chapter), an emotion, and context for the director.
+   mission, a chapter), an emotion, and context for the director. Ids name files, so they follow the strictest
+   system's rules (Windows): the studio checks them on every machine.
 2. **Where the direction lives.** Three TOML files the page edits: the cast (speakers to voices, and how each voice
    sounds), the directions (how each line is played), and pronunciations.
 3. **How the picks reach the game.** What Apply does after it has mastered the picks and written a manifest.

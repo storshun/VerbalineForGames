@@ -22,8 +22,49 @@ and .../pitch/ (the pitch-following one, for "pitch" takes), each (verbaline tra
   model.pth / config.yml    the model and its Seed-VC config
   model.json                {f0, steps, clips, minutes, trained}: f0 says which model it tunes (pitch-following or not)
   previous/                 the model it replaced (the same three files)"""
-import csv, hashlib, json, re, struct
+import csv, hashlib, json, os, re, struct, time
 from pathlib import Path
+
+
+def replace(src, dst, tries=40):
+    """Path(src).replace(dst), patient on Windows: there a file another program has open for a moment (the page
+    reading it, a virus scanner looking at a new file, a sync client) can't be replaced or moved, and the rename fails
+    with PermissionError. It tries again for about two seconds before giving up."""
+    for i in range(tries):
+        try: return Path(src).replace(dst)
+        except PermissionError:
+            if os.name != 'nt' or i == tries - 1: raise
+            time.sleep(.05)
+
+
+def write_text(path, text):
+    """Writes a text file whole (UTF-8, a temporary file renamed over it), so a reader never sees half of it."""
+    path = Path(path); tmp = path.with_name(path.name + '.tmp')
+    tmp.write_text(text, encoding='utf-8'); replace(tmp, path)
+
+
+# Names Windows won't give a file or folder, whatever the extension: line ids and voice ids name folders.
+WINDOWS_RESERVED = {'con', 'prn', 'aux', 'nul', *(f'com{i}' for i in range(1, 10)), *(f'lpt{i}' for i in range(1, 10))}
+
+
+def name_problem(name):
+    """Why a name can't name a file on every system ('' when it can): Windows' reserved names (con, aux, nul, com1...,
+    with any extension) and a trailing dot or space, which Windows drops."""
+    if name.split('.')[0].lower() in WINDOWS_RESERVED: return f'"{name}" is a name Windows reserves (con, prn, aux, nul, com1-9, lpt1-9)'
+    if name.endswith(('.', ' ')): return f'"{name}" ends in a dot, which Windows drops from file names'
+    return ''
+
+
+def read_user_text(path, csv=False):
+    """A text file a person wrote (a lines file, the cast, a config), as UTF-8 with or without a byte-order mark, its
+    line ends made \\n (csv=True keeps them: the csv module reads them itself). One saved in Windows' code page
+    (Excel's plain "CSV", an old Notepad) says how to save it as UTF-8."""
+    try:
+        text = Path(path).read_bytes().decode('utf-8-sig')
+        return text if csv else text.replace('\r\n', '\n').replace('\r', '\n')
+    except UnicodeDecodeError as e:
+        raise ValueError(f'{Path(path).name} isn\'t UTF-8 (byte {e.start}): save it as UTF-8. In Excel: Save As, '
+                         f'"CSV UTF-8 (Comma delimited)"; in Notepad: Save As, Encoding "UTF-8".') from None
 
 CAND = re.compile(r'cand_(\d+)')
 
@@ -118,7 +159,7 @@ def origins(design):
 
 
 def save_origins(design, data):
-    f = Path(design) / 'origins.json'; tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(data, indent=1), encoding='utf-8'); tmp.replace(f)
+    f = Path(design) / 'origins.json'; tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(data, indent=1), encoding='utf-8'); replace(tmp, f)
 
 
 def meta(cand):

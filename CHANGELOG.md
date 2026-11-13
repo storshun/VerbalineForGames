@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.3 (2026-11-12)
+
+Windows, a closer look.
+
+- **Files held open**: on Windows a file the page is reading, or that an antivirus or OneDrive has open for a moment,
+  can't be replaced, so a pick, a word edit or a promoted reference could fail with "Access is denied".
+  Every replace and move now waits up to about 2 seconds for the file to be let go.
+- **Files from Excel and Notepad**: a lines file or studio file saved in Windows' code page stops with which file,
+  which byte and how to save it as UTF-8 (Excel: "CSV UTF-8"), instead of an encoding error. Windows line ends are
+  read as plain line ends; a line break inside a CSV cell is kept.
+- **Names Windows can't hold**: line and voice ids such as `con`, `aux.intro` or `nul`, ids ending in a dot, and two
+  ids differing only in case are refused with the reason, on every system, so a project made on Linux works on
+  Windows.
+- **One studio per port**: Windows let a second studio share a port, and either one might answer the page.
+  The studio now asks for its port alone and, when it can't have it, says so and how to pick another (on Windows,
+  how to list the ports the system reserves).
+- **`[train] gpu_slot`**: a shell script can't run on Windows; training now skips it with a note instead of failing.
+- **Tests**: checks for all of the above; the Windows test run also checks that Cancel stops a job's children and
+  that a job in a model environment passes on its result.
+- **Docs**: the install details' Windows section adds OneDrive and sync folders, long paths, reserved names, ports,
+  Excel, the zip download, `py` versus `python`, and starting the studio from Task Scheduler; the troubleshooting
+  table has the Windows symptoms; the project API states the id rules; development notes cover writing code that
+  holds on Windows.
+
 ## 0.1.2 (2026-11-12)
 
 - **"Use as…" on Windows**: 0.1.0 sent the page Windows paths (`voices\mai\design\cand_3.wav`), and the page's

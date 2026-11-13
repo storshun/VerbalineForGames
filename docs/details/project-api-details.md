@@ -64,7 +64,7 @@ words_from_manifest = false        # the game shows the manifest's words, not th
 
 | Field | | Meaning |
 |---|---|---|
-| `id` | required | Unique. Letters, digits, `_`, `.`, `-` only: it names files. Never reuse one for different words. |
+| `id` | required | Unique, also ignoring case. Letters, digits, `_`, `.`, `-` only: it names files. Not a name Windows reserves (`con`, `prn`, `aux`, `nul`, `com1`-`9`, `lpt1`-`9`, also before a dot) and not ending in a dot. Keep it under about 60 characters for Windows' path limit. Never reuse one for different words. |
 | `speaker` | required | Who says it, as the game names them. The cast's `[speakers]` maps it to a voice. |
 | `text` | required | The words, as the subtitles show them. |
 | `group` | | A scene, mission or chapter: the page's filter, the timeline's unit. Any string. |
@@ -86,7 +86,10 @@ The built-in reader (`verbaline/project.py`, `FileLines`) takes any of:
 
 - **TOML**: `[[line]]` tables, each with an `id`; or one `[<id>]` table per line.
 - **JSON**: a list of lines; `{"lines": [...]}`; or `{"<id>": {...}}`.
-- **CSV**: a header row naming the fields; empty cells are unset.
+- **CSV**: a header row naming the fields; empty cells are unset. From Excel, save as "CSV UTF-8".
+
+Every file is UTF-8 (a byte-order mark and Windows line ends are fine); a file in another encoding is refused with
+the byte where it stops.
 
 ✎ edits on the page rewrite the line's `text` in place (TOML keeps its comments and layout; JSON is rewritten with an
 indent of 2; CSV keeps its columns). A line id that isn't in the file is refused.
@@ -137,7 +140,7 @@ missing falls back to the lines file's behavior or the studio's default.
 
 ```toml
 [speakers]
-"Ada" = "ada"                      # a speaker as the lines name it -> a voice id
+"Ada" = "ada"                      # a speaker as the lines name it -> a voice id (same naming rules as a line id)
 "Purser (radio)" = "purser"        # several speakers may share a voice
 
 [voices.ada]

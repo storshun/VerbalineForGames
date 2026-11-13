@@ -22,7 +22,7 @@ and what happens around it (the project's events), conversations boxed together;
 and ▶ from here plays the scene's picked takes in turn (docs/details/timeline-details.md).
 Generation runs as background jobs, one at a time (the GPU holds one model at a time), with their log on the page.
 New takes from any engine show up on reload: put them in <work_dir>/takes/<line key>/<source>_<n>.wav."""
-import collections, itertools, json, mimetypes, os, re, shutil, subprocess, sys, threading, time, tomllib, urllib.parse, uuid
+import collections, itertools, json, mimetypes, os, re, shutil, socket, subprocess, sys, threading, time, tomllib, urllib.parse, uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -350,10 +350,10 @@ def promote(c, src, voice, emotion, text):
     """Makes a clip a voice's reference for an emotion, keeping the old one with a timestamp."""
     dst = c.path('voices', voice, 'ref', emotion + '.wav'); dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists():
-        old = dst.with_name(f'{emotion}_{time.strftime("%Y%m%d-%H%M%S")}.wav'); dst.replace(old)
-        if dst.with_suffix('.json').exists(): dst.with_suffix('.json').replace(old.with_suffix('.json'))
+        old = dst.with_name(f'{emotion}_{time.strftime("%Y%m%d-%H%M%S")}.wav'); workfiles.replace(dst, old)
+        if dst.with_suffix('.json').exists(): workfiles.replace(dst.with_suffix('.json'), old.with_suffix('.json'))
         # Its transcript goes with it (until Nov 6 it was overwritten, so a kept reference lost the words Qwen reads).
-        if dst.with_suffix('.txt').exists(): dst.with_suffix('.txt').replace(old.with_suffix('.txt'))
+        if dst.with_suffix('.txt').exists(): workfiles.replace(dst.with_suffix('.txt'), old.with_suffix('.txt'))
     shutil.copy2(src, dst); dst.with_suffix('.txt').write_text(text.strip(), encoding='utf-8')
     workfiles.note_source(c.work, voice, src, dst)             # ref-source: which candidate or take it came from
 
@@ -520,7 +520,7 @@ class Handler(BaseHTTPRequestHandler):
             src = self.file_in_work(body['path']); d = c.path('voices', body['voice'], 'design')
             if not src or src.parent != d.resolve() or not re.fullmatch(r'cand_\d+\.wav', src.name): raise ValueError('not a design candidate')
             gone = d / 'rejected'; gone.mkdir(exist_ok=True); stamp = time.strftime('%Y%m%d-%H%M%S')
-            for f, suffix in workfiles.candidate_files(src): f.replace(gone / f'{src.stem}_{stamp}{suffix}')
+            for f, suffix in workfiles.candidate_files(src): workfiles.replace(f, gone / f'{src.stem}_{stamp}{suffix}')
         elif path == '/api/candidate/move':
             # A candidate that's wrong for this character but right for another: it becomes the other voice's next
             # candidate (with its transcript and previews), remembering where it came from and what made it.
@@ -536,7 +536,7 @@ class Handler(BaseHTTPRequestHandler):
                 if suffix.endswith('.preview.wav'): to_f = dd / 'previews' / f'{stem}.{suffix.split(".")[1]}.wav'
                 elif suffix.startswith('.source'): to_f = dd / 'sources' / (stem + suffix[len('.source'):])
                 else: to_f = dd / (stem + suffix)
-                to_f.parent.mkdir(exist_ok=True); f.replace(to_f)
+                to_f.parent.mkdir(exist_ok=True); workfiles.replace(f, to_f)
             o = workfiles.origins(dd); o[stem] = came; workfiles.save_origins(dd, o)
             o = workfiles.origins(d)
             if o.pop(src.stem, None) is not None: workfiles.save_origins(d, o)
@@ -548,7 +548,7 @@ class Handler(BaseHTTPRequestHandler):
             if not ref.exists(): raise ValueError(f'{body["voice"]} has no {body["emotion"]} reference')
             gone = ref.parent / 'removed'; gone.mkdir(exist_ok=True); stamp = time.strftime('%Y%m%d-%H%M%S')
             for f in (ref, ref.with_suffix('.txt'), ref.with_suffix('.json')):
-                if f.exists(): f.replace(gone / f'{f.stem}_{stamp}{f.suffix}')
+                if f.exists(): workfiles.replace(f, gone / f'{f.stem}_{stamp}{f.suffix}')
         elif path == '/api/perform/delete':
             # A recording you don't want: it and its conversions go to removed/ folders (recoverable). A picked
             # conversion stays where it is. Take numbers aren't reused, so nothing new takes their names.
@@ -557,10 +557,10 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('not a recording of that line')
             gone = d / 'removed'; gone.mkdir(exist_ok=True)
             for f in (src, src.with_suffix('.txt')):
-                if f.exists(): f.replace(gone / f.name)
+                if f.exists(): workfiles.replace(f, gone / f.name)
             picked = c.json('picks.json', {}).get(key, {}).get('take'); t = c.path('takes', key)
             for f in t.glob(f'vc_{src.stem}_*.wav'):
-                if c.rel(f) != picked: (t / 'removed').mkdir(exist_ok=True); f.replace(t / 'removed' / f.name)
+                if c.rel(f) != picked: (t / 'removed').mkdir(exist_ok=True); workfiles.replace(f, t / 'removed' / f.name)
         elif path == '/api/parts':
             # ✂ Just the line's parts (the markup), checked: '' takes them away (its takes stay).
             r = self.row(key)
@@ -767,11 +767,33 @@ class Handler(BaseHTTPRequestHandler):
         raise ValueError(f'unknown job "{kind}"')
 
 
+class Server(ThreadingHTTPServer):
+    """The page's server, with its port to itself. Python's lets a port be reused (SO_REUSEADDR), and on Windows that
+    lets a second studio bind the same port without an error and take half the page's requests: there it asks for the
+    port exclusively instead."""
+    allow_reuse_address = os.name != 'nt'
+    def server_bind(self):
+        if os.name == 'nt' and hasattr(socket, 'SO_EXCLUSIVEADDRUSE'):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
+
+def bind(port, handler=None):
+    """The server on 127.0.0.1:port, or SystemExit saying why the port can't be had."""
+    try: return Server(('127.0.0.1', port), handler or Handler)
+    except OSError as e:
+        hint = (' On Windows a port can also sit in a range the system reserves: `netsh interface ipv4 show '
+                'excludedportrange protocol=tcp` lists them.' if os.name == 'nt' else '')
+        sys.exit(f'Port {port} can\'t be used ({e.strerror or e}): another studio or program may have it. Choose another '
+                 f'with --port or [project] port in verbaline.toml.{hint}')
+
+
 def serve(c, port, export):
     tomledit.use(c.project)
+    server = bind(port)
     Handler.ctx, Handler.jobs, Handler.export = c, Jobs(c.project.root), staticmethod(export)
     print(f'Verbaline For Games, {c.project.name}: http://localhost:{port}  (Ctrl+C to stop)', flush=True)
-    try: ThreadingHTTPServer(('127.0.0.1', port), Handler).serve_forever()
+    try: server.serve_forever()
     except KeyboardInterrupt: pass
 
 

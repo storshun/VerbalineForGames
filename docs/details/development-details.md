@@ -39,14 +39,23 @@ work folder, and checks: the emotion and engine tables agree; restyle presets ar
 job kind's steps and refusals; reference fallback; take order and checks; register shifts and restyle keeping; parts
 markup, part ids, joining (gaps, levels, room tone, resampling) and generation with a stand-in engine; lines files in
 TOML, JSON and CSV with edits written back; config layering; line validation; Apply with `copy_to` and `command`; the
-manifest; word tracking; the adapter example's hooks and timeline; every text file and pipe naming its encoding. Add
-a check with every behavior change.
+manifest; word tracking; the adapter example's hooks and timeline; every text file and pipe naming its encoding;
+Windows' file rules (reserved and case-only ids, code-page and Excel files, replacing a file someone holds open, an
+exclusive port, a job in a model environment passing on its exit code, Cancel stopping a job's children). Add a
+check with every behavior change.
 
 On GitHub, `.github/workflows/windows.yml` runs them on Windows for every push and pull request, then follows the
 README's Windows quick start (its config line in Windows PowerShell, `verbaline lines`, `serve`) until the page and
 `/api/state` answer. It has no GPU, so the models aren't in it. To check Windows text handling on Linux, run the
 tests with `PYTHONUTF8=0 LC_ALL=en_US.CP1252` (a locale the system lacks falls back to ASCII, which is stricter than
 cp1252).
+
+On Windows itself: `& "$HOME\venvs\verbaline\Scripts\python.exe" tests\test_verbaline.py` from the checkout. Some
+checks only run there (Cancel and `taskkill`, the exit code of a job in a model environment).
+
+Write code that holds on Windows: name `encoding='utf-8'` on every text open and pipe (a check enforces it), replace
+files with `workfiles.replace` or `workfiles.write_text` (they retry while another program holds the file), read
+files people edit with `workfiles.read_user_text`, give the page paths with forward slashes, and never `os.execv`.
 
 ## Changing the project API
 

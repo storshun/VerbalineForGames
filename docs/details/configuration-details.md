@@ -76,7 +76,7 @@ An adapter's `apply` hook replaces `command` and `copy_to`.
 |---|---|---|
 | `steps` | 600 | per model |
 | `batch_size` | 4 | |
-| `gpu_slot` | "" | a script run as `<script> --need <MB> <command…>` that waits for free GPU memory (EditX and training use it) |
+| `gpu_slot` | "" | a script run as `<script> --need <MB> <command…>` that waits for free GPU memory (EditX and training use it). On Windows only an `.exe`, `.bat` or `.cmd` runs; any other is skipped with a note in the training job's log |
 
 ## [score]
 

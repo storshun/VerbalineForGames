@@ -409,9 +409,23 @@ check('its config layers over the defaults', pj.cfg['apply']['copy_to'] == 'game
 bad = Path(TMP.name) / 'bad'; bad.mkdir(); (bad / 'verbaline.toml').write_text('[lines]\nfile = "l.toml"\n', encoding='utf-8')
 for i, (txt, why) in enumerate((('id = "has space"\nspeaker = "x"\ntext = "y"', 'an id with a space'),
                                ('id = "a"\nspeaker = "x"\ntext = ""', 'a line with no words'),
-                               ('id = "a"\nspeaker = "x"\ntext = "y"\n[[line]]\nid = "a"\nspeaker = "x"\ntext = "z"', 'an id used twice'))):
+                               ('id = "a"\nspeaker = "x"\ntext = "y"\n[[line]]\nid = "a"\nspeaker = "x"\ntext = "z"', 'an id used twice'),
+                               ('id = "aux"\nspeaker = "x"\ntext = "y"', 'an id Windows reserves (aux)'),
+                               ('id = "con.intro"\nspeaker = "x"\ntext = "y"', 'an id Windows reserves with a dot after it (con.intro)'),
+                               ('id = "end."\nspeaker = "x"\ntext = "y"', 'an id ending in a dot'),
+                               ('id = "Intro"\nspeaker = "x"\ntext = "y"\n[[line]]\nid = "intro"\nspeaker = "x"\ntext = "z"', 'ids that differ only in case'))):
     (bad / 'l.toml').write_text('[[line]]\n' + txt + '\n', encoding='utf-8')
     check(f'lines are refused with {why}', raises(lambda: projects.Project(bad).lines(None)))
+(bad / 'l.toml').write_bytes('[[line]]\nid = "a"\nspeaker = "Zoë"\ntext = "Déjà vu"\n'.encode('cp1252'))
+try: projects.Project(bad).lines(None); why = ''
+except ValueError as e: why = str(e)
+check(f'a lines file saved in Windows\' code page says how to save it as UTF-8 ({why[:60]}...)', 'CSV UTF-8' in why)
+(bad / 'l.toml').write_bytes(b'\xef\xbb\xbf[[line]]\r\nid = "a"\r\nspeaker = "Zo\xc3\xab"\r\ntext = "y"\r\n')
+check('a lines file with a byte-order mark and Windows line ends reads fine', projects.Project(bad).lines(None)[0]['speaker'] == 'Zoë')
+(bad / 'verbaline.toml').write_text('[lines]\nfile = "l.csv"\n', encoding='utf-8')
+(bad / 'l.csv').write_bytes(b'\xef\xbb\xbfid,speaker,text\r\na,Ada,"Two lines:\r\nhere"\r\nb,Ada,One\r\n')
+rows = projects.Project(bad).lines(None)
+check(f'an Excel CSV (byte-order mark, CRLF, a quoted line break) reads as its lines ({[r["id"] for r in rows]})', [r['id'] for r in rows] == ['a', 'b'] and rows[0]['text'] == 'Two lines:\r\nhere')
 (bad / 'verbaline.toml').write_text('[project]\nname = "x"\n', encoding='utf-8')
 check('a project with neither a lines file nor an adapter is refused', raises(lambda: projects.Project(bad)))
 
@@ -484,6 +498,43 @@ check(f'...its Apply writes the game\'s voice table, which its game_state reads 
 T2 = ca.project.timeline(ca, 'dock', {})
 check(f'...and a voiced line lasts its take on the timeline ({T2["lines"][0]["end"] - T2["lines"][0]["start"]:.2f} s)',
       not T2['lines'][0]['est'] and abs(T2['lines'][0]['end'] - T2['lines'][0]['start'] - 2.0) < .2)
+
+# ------------------------------------------------------------------ Windows (the Windows test run checks these there)
+import subprocess, threading, time                                                   # noqa: E402
+from verbaline import tomledit                                                       # noqa: E402
+s1 = vo_audition.bind(0); port = s1.server_address[1]
+check(f'a second studio on a taken port is refused, saying what to do (port {port}; Windows would have shared it)', raises(lambda: vo_audition.bind(port)))
+s1.server_close()
+busy = Path(TMP.name) / 'busy.json'; busy.write_text('{}', encoding='utf-8')
+new = busy.with_name('busy.json.tmp'); new.write_text('{"a": 1}', encoding='utf-8')
+held = open(busy, encoding='utf-8'); threading.Timer(.3, held.close).start()
+vo_files.replace(new, busy)
+check('a file another program has open is replaced once it lets go (Windows refuses the rename meanwhile)', json.loads(busy.read_text(encoding='utf-8')) == {'a': 1})
+check('a voice id Windows reserves is refused (nul)', raises(lambda: tomledit.add_voice('nul')))
+
+calls, real = [], (vo.subprocess.call, vo.os.execv)
+vo.subprocess.call = lambda argv: (calls.append('call'), 7)[1]
+vo.os.execv = lambda py, argv: calls.append('execv')
+fake = Path(TMP.name) / ('python.exe' if os.name == 'nt' else 'python'); fake.write_text('', encoding='utf-8')
+c.cfg.setdefault('envs', {})['score'] = str(fake); code = None
+try: vo.reexec(c, argparse.Namespace(cmd='score', engine=None, backend=None))
+except SystemExit as e: code = e.code
+finally: vo.subprocess.call, vo.os.execv = real; c.cfg['envs']['score'] = ''
+if os.name == 'nt':
+    check(f'a model environment\'s job runs as a child on Windows, its exit code passed on ({calls}, {code})', calls == ['call'] and code == 7)
+    # Cancel: the job's own child (the model environment's Python) stops with it.
+    pidf = Path(TMP.name) / 'child.pid'
+    parent = subprocess.Popen([sys.executable, '-c', 'import subprocess, sys, time; p = subprocess.Popen([sys.executable, "-c", '
+                               '"import time; time.sleep(60)"]); open(sys.argv[1], "w").write(str(p.pid)); time.sleep(60)', str(pidf)])
+    child = None
+    for _ in range(100):
+        try: child = int(pidf.read_text()); break
+        except (OSError, ValueError): time.sleep(.1)
+    vo_audition.stop(parent); parent.wait(timeout=10); time.sleep(.5)
+    alive = child and str(child) in subprocess.run(['tasklist', '/FI', f'PID eq {child}', '/NH'], capture_output=True, text=True).stdout
+    check(f'Cancel stops a job and what it started (child {child})', child and not alive)
+else:
+    check(f'a model environment\'s job replaces itself with that Python ({calls})', calls == ['execv'])
 
 # The page: no game's names left in it, and the title is the project's.
 page = (REPO / 'verbaline/page.html').read_text(encoding='utf-8')
