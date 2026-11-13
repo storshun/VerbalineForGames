@@ -1,6 +1,6 @@
 """`verbaline serve`: the studio page. Every voice review and every voice decision happens here.
 
-Open http://localhost:8765 (scripts/install_service.sh keeps it running as a user service).
+Open http://localhost:8765 (on Linux, scripts/install_service.sh keeps it running as a user service).
 
 Lines tab, for each line:
   - pick the take that ships (or press 1-3): <work_dir>/picks.json;
@@ -40,6 +40,14 @@ NOISE = re.compile(r'it/s\]|s/it\]|\d+%\||Fetching \d+ files|UserWarning|FutureW
 
 # ------------------------------------------------------------------ background jobs
 
+def stop(proc):
+    """Stops a job and what it started: on Windows a job's model environment runs as its child, and terminate() alone
+    would leave that running."""
+    if os.name == 'nt':
+        subprocess.run(['taskkill', '/F', '/T', '/PID', str(proc.pid)], capture_output=True)
+    else: proc.terminate()
+
+
 class Jobs:
     """Runs studio commands (cli.py) one job at a time (each job is one or more steps), keeping their output for the page."""
     def __init__(self, root='.'):
@@ -57,7 +65,7 @@ class Jobs:
             for j in list(self.queue):
                 if j['id'] == jid: self.queue.remove(j); return True
             if self.current and self.current['id'] == jid and self.proc:
-                self.current['cancelled'] = True; self.proc.terminate(); return True
+                self.current['cancelled'] = True; stop(self.proc); return True
         return False
 
     def note(self, line):
@@ -75,7 +83,7 @@ class Jobs:
                 j['step'] = k + 1
                 self.note('$ verbaline ' + ' '.join(argv))
                 try:
-                    self.proc = subprocess.Popen([sys.executable, str(VO), *argv], cwd=self.root, env=env, text=True,
+                    self.proc = subprocess.Popen([sys.executable, str(VO), *argv], cwd=self.root, env=env, text=True, encoding='utf-8', errors='replace',
                                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
                     for raw in self.proc.stdout:
                         for part in raw.split('\r'): self.note(part)
@@ -104,7 +112,7 @@ def same_words(a, b): return ' '.join((a or '').split()) == ' '.join((b or '').s
 
 def made_from(c, key):
     """{take: {text}}: the words each take was made from (verbaline records them)."""
-    f = c.path('takes', key, 'made.json'); return json.loads(f.read_text()) if f.exists() else {}
+    f = c.path('takes', key, 'made.json'); return json.loads(f.read_text(encoding='utf-8')) if f.exists() else {}
 
 
 def line_shift(c, r):
@@ -150,7 +158,7 @@ def state(c, export):
     tuned_voices = {v for v in {r['voice'] for rows in groups.values() for r in rows} if tuned(c, v)}
     for key, rows in groups.items():
         r = rows[0]; folder = c.path('takes', key); made = made_from(c, key)
-        scores = json.loads((folder / 'scores.json').read_text()) if (folder / 'scores.json').exists() else {}
+        scores = json.loads((folder / 'scores.json').read_text(encoding='utf-8')) if (folder / 'scores.json').exists() else {}
         takes = []
         for t in sorted(folder.glob('*.wav')) if folder.exists() else []:
             s = scores.get(t.name, {})
@@ -276,7 +284,7 @@ def cast_state(c, export):
         for w in sorted(c.path('voices', v, 'ref').glob('*.wav')) if c.path('voices', v, 'ref').exists() else []:
             if w.stem not in EMOTIONS: continue           # older references kept with a timestamp
             t = w.with_suffix('.txt')
-            refs.append(dict(emotion=w.stem, path=c.rel(w), text=t.read_text().strip() if t.exists() else '',
+            refs.append(dict(emotion=w.stem, path=c.rel(w), text=t.read_text(encoding='utf-8').strip() if t.exists() else '',
                              source=workfiles.clip_source(c.work, v, w)))       # ref-source: the candidate or take it is
         cands = []
         d = c.path('voices', v, 'design'); came = workfiles.origins(d) if d.exists() else {}
@@ -297,7 +305,7 @@ def cast_state(c, export):
                               method=m.get('method', 'design' if m else ''), at=m.get('at', ''),
                               description=m.get('description', '') if m.get('method') == 'design' else '',
                               seeded=m.get('method') == 'design' and bool(m.get('seed')), retries=m.get('retries', 0),
-                              text=w.with_suffix('.txt').read_text().strip() if w.with_suffix('.txt').exists() else '',
+                              text=w.with_suffix('.txt').read_text(encoding='utf-8').strip() if w.with_suffix('.txt').exists() else '',
                               previews={e: c.rel(p) for e, p in workfiles.previews(w).items()}))
         # In rejected/: deleted candidates, and the old versions retries replaced (before Nov 6 a retry replaced in place).
         alive = {int(x['n']) for x in cands}
@@ -335,8 +343,8 @@ def cast_state(c, export):
 
 def rel(root, path):
     """A path as the page names it: from the project's root when inside it."""
-    try: return str(Path(path).relative_to(root))
-    except ValueError: return str(path)
+    try: return Path(path).relative_to(root).as_posix()
+    except ValueError: return Path(path).as_posix()
 
 def promote(c, src, voice, emotion, text):
     """Makes a clip a voice's reference for an emotion, keeping the old one with a timestamp."""
@@ -346,7 +354,7 @@ def promote(c, src, voice, emotion, text):
         if dst.with_suffix('.json').exists(): dst.with_suffix('.json').replace(old.with_suffix('.json'))
         # Its transcript goes with it (until Nov 6 it was overwritten, so a kept reference lost the words Qwen reads).
         if dst.with_suffix('.txt').exists(): dst.with_suffix('.txt').replace(old.with_suffix('.txt'))
-    shutil.copy2(src, dst); dst.with_suffix('.txt').write_text(text.strip())
+    shutil.copy2(src, dst); dst.with_suffix('.txt').write_text(text.strip(), encoding='utf-8')
     workfiles.note_source(c.work, voice, src, dst)             # ref-source: which candidate or take it came from
 
 
@@ -368,7 +376,7 @@ def save_performance(c, key, words, data):
     audio = audio * (.7 / max(float(np.abs(audio).max()), 1e-6))
     d = c.path('performances'); d.mkdir(exist_ok=True)
     p = d / f'{key}_p{workfiles.next_performance(d, key)}.wav'
-    sf.write(p, audio, sr, subtype='PCM_24'); p.with_suffix('.txt').write_text(words)
+    sf.write(p, audio, sr, subtype='PCM_24'); p.with_suffix('.txt').write_text(words, encoding='utf-8')
     return p, len(audio) / sr, peak
 
 
@@ -497,9 +505,9 @@ class Handler(BaseHTTPRequestHandler):
             # The transcript must be what the clip actually says (Qwen cloning reads both as one recording; a wrong
             # transcript leaks words into every take). A take: what Whisper heard in it, else the words it was made
             # from; never the line's current words, which may have been rewritten since.
-            text = body.get('text') or (src.with_suffix('.txt').read_text() if src.with_suffix('.txt').exists() else '')
+            text = body.get('text') or (src.with_suffix('.txt').read_text(encoding='utf-8') if src.with_suffix('.txt').exists() else '')
             if not text and src.parent.parent == c.path('takes').resolve():
-                sc = src.parent / 'scores.json'; heard = json.loads(sc.read_text()).get(src.name, {}).get('heard', '') if sc.exists() else ''
+                sc = src.parent / 'scores.json'; heard = json.loads(sc.read_text(encoding='utf-8')).get(src.name, {}).get('heard', '') if sc.exists() else ''
                 text = heard or made_from(c, src.parent.name).get(src.name, {}).get('text', '')
             if not text: raise ValueError('no transcript for that clip (score it first)')
             promote(c, src, body['voice'], body['emotion'], text)
@@ -773,4 +781,4 @@ PAGE_FILE = HERE / 'page.html'
 def page(c):
     """The page, with the project's name in its title."""
     import html
-    return PAGE_FILE.read_text().replace('{{PROJECT}}', html.escape(c.project.name))
+    return PAGE_FILE.read_text(encoding='utf-8').replace('{{PROJECT}}', html.escape(c.project.name))

@@ -12,7 +12,7 @@ WORDS_PER_SECOND = 2.6          # how long an unvoiced line is guessed to take
 
 
 def _scenes():
-    return json.loads(SCENES.read_text())['scenes']
+    return json.loads(SCENES.read_text(encoding='utf-8'))['scenes']
 
 
 def lines(ctx):
@@ -33,12 +33,12 @@ def groups(ctx):
 
 def set_words(ctx, ids, text):
     """The page's ✎ edit words: rewrite those lines' words in the scene file."""
-    d = json.loads(SCENES.read_text()); n = 0
+    d = json.loads(SCENES.read_text(encoding='utf-8')); n = 0
     for s in d['scenes']:
         for b in s['beats']:
             if b.get('id') in ids: b['say'] = text; n += 1
     if not n: raise ValueError(f'no line {", ".join(ids)} in {SCENES.name}')
-    SCENES.write_text(json.dumps(d, indent=2) + '\n')
+    SCENES.write_text(json.dumps(d, indent=2) + '\n', encoding='utf-8')
 
 
 def watch(ctx):
@@ -51,18 +51,18 @@ def game_state(ctx):
     marks a line "not in the game yet" when its words or pick differ from these."""
     table = ROOT / 'game' / 'vo_table.json'
     if not table.exists(): return {}, {}
-    t = json.loads(table.read_text())
+    t = json.loads(table.read_text(encoding='utf-8'))
     return ({i: e['text'] for i, e in t.items()}, {e['key']: e['take'] for e in t.values()})
 
 
 def apply(ctx, manifest, run):
     """Apply: copy the mastered takes into game/vo and write the game's voice table from the manifest. `run` runs a
     command in the project's root, logged, and stops Apply when it fails (use it for an import or a test)."""
-    m = json.loads(Path(manifest).read_text()); vo = ROOT / 'game' / 'vo'; vo.mkdir(parents=True, exist_ok=True)
+    m = json.loads(Path(manifest).read_text(encoding='utf-8')); vo = ROOT / 'game' / 'vo'; vo.mkdir(parents=True, exist_ok=True)
     for e in m['lines'].values(): shutil.copy2(Path(manifest).parent / e['file'], vo / e['file'])
     table = {i: dict(file='vo/' + e['file'], text=e['text'], seconds=e['seconds'], key=e['key'], take=e['take'])
              for i, e in m['lines'].items()}
-    (ROOT / 'game' / 'vo_table.json').write_text(json.dumps(table, indent=1) + '\n')
+    (ROOT / 'game' / 'vo_table.json').write_text(json.dumps(table, indent=1) + '\n', encoding='utf-8')
     print(f'  {len(table)} lines in game/vo_table.json', flush=True)
 
 
@@ -72,7 +72,7 @@ def timeline(ctx, group, options, replay=False):
     option stretches the pauses (a reader who lingers)."""
     pace = float(options.get('pace', 1))
     table = {}
-    if (ROOT / 'game' / 'vo_table.json').exists(): table = json.loads((ROOT / 'game' / 'vo_table.json').read_text())
+    if (ROOT / 'game' / 'vo_table.json').exists(): table = json.loads((ROOT / 'game' / 'vo_table.json').read_text(encoding='utf-8'))
     scene = next((s for s in _scenes() if s['id'] == group), _scenes()[0])
     t, out, events, prev = 0.0, [], [], None
     for b in scene['beats']:

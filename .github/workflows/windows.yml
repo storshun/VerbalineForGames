@@ -1,0 +1,52 @@
+# Windows: the tests (no models, no GPU) and the README's quick start, up to the page answering.
+name: Windows
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install the studio
+        run: python -m pip install -e .
+
+      - name: Tests
+        run: python tests/test_verbaline.py
+
+      # The README's config line, in Windows PowerShell 5 (it writes a byte-order mark the studio must read).
+      - name: The machine's config, as the README writes it
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force "$HOME\.config\verbaline" | Out-Null
+          Add-Content -Encoding utf8 "$HOME\.config\verbaline\config.toml" "[envs]`nqwen = `"~/venvs/qwen/Scripts/python.exe`""
+          Get-Content "$HOME\.config\verbaline\config.toml"
+
+      - name: Lines and the page
+        shell: powershell
+        run: |
+          verbaline --project examples/minimal lines
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $server = Start-Process verbaline -ArgumentList '--project', 'examples/minimal', 'serve', '--port', '8799' `
+                      -PassThru -NoNewWindow -RedirectStandardOutput serve.log -RedirectStandardError serve.err
+          $page = $null
+          foreach ($i in 1..60) {
+            try { $page = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8799/; break } catch { Start-Sleep -Milliseconds 500 }
+          }
+          $ok = $page -and $page.StatusCode -eq 200 -and $page.Content -match '<title>Lighthouse: Verbaline For Games</title>'
+          if ($ok) {
+            $state = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8799/api/state
+            $ok = $state.StatusCode -eq 200 -and $state.Content -match 'intro_hello'
+          }
+          Stop-Process -Id $server.Id -Force
+          Get-Content serve.log, serve.err
+          if (-not $ok) { Write-Output 'The page or its state did not answer'; exit 1 }
+          Write-Output "The page answered ($($page.Content.Length) characters) and its state lists the example's lines"

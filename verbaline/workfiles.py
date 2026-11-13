@@ -68,12 +68,12 @@ def training_clips(work, voice):
     w = Path(work); out = []; ref = w / 'voices' / voice / 'ref'
     for p in sorted(ref.glob('*.wav')) if ref.exists() else []:
         if '_' not in p.stem: out.append(p)                       # current references (replaced ones are timestamped)
-    picks = json.loads((w / 'picks.json').read_text()) if (w / 'picks.json').exists() else {}
-    with open(w / 'lines.csv', newline='') as f: keys = {r['key'] for r in csv.DictReader(f) if r['voice'] == voice}
+    picks = json.loads((w / 'picks.json').read_text(encoding='utf-8')) if (w / 'picks.json').exists() else {}
+    with open(w / 'lines.csv', newline='', encoding='utf-8') as f: keys = {r['key'] for r in csv.DictReader(f) if r['voice'] == voice}
     for key in sorted(keys):
         sc = w / 'takes' / key / 'scores.json'; mf = w / 'takes' / key / 'made.json'
-        made = json.loads(mf.read_text()) if mf.exists() else {}
-        for name, s in (json.loads(sc.read_text()) if sc.exists() else {}).items():
+        made = json.loads(mf.read_text(encoding='utf-8')) if mf.exists() else {}
+        for name, s in (json.loads(sc.read_text(encoding='utf-8')) if sc.exists() else {}).items():
             if name.startswith(('vc_', 'mirror_', 'restyle_', 'beat_')) or not (w / 'takes' / key / name).exists(): continue
             if made.get(name, {}).get('target') or made.get(name, {}).get('came'): continue
             good = s.get('wer', 1) <= .1 and s.get('total', 0) >= .85 and s.get('voice', 0) >= .7 and not s.get('edges')
@@ -87,7 +87,7 @@ def seedvc_model(work, voice, f0):
     takes they make."""
     d = Path(work) / 'voices' / voice / 'seedvc' / ('pitch' if f0 else 'clone')
     if not ((d / 'model.pth').exists() and (d / 'model.json').exists()): return None
-    return dict(json.loads((d / 'model.json').read_text()), checkpoint=str(d / 'model.pth'), config=str(d / 'config.yml'))
+    return dict(json.loads((d / 'model.json').read_text(encoding='utf-8')), checkpoint=str(d / 'model.pth'), config=str(d / 'config.yml'))
 
 
 def next_performance(folder, key):
@@ -114,19 +114,19 @@ def previews(cand):
 
 
 def origins(design):
-    f = Path(design) / 'origins.json'; return json.loads(f.read_text()) if f.exists() else {}
+    f = Path(design) / 'origins.json'; return json.loads(f.read_text(encoding='utf-8')) if f.exists() else {}
 
 
 def save_origins(design, data):
-    f = Path(design) / 'origins.json'; tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(data, indent=1)); tmp.replace(f)
+    f = Path(design) / 'origins.json'; tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(data, indent=1), encoding='utf-8'); tmp.replace(f)
 
 
 def meta(cand):
-    f = Path(cand).with_suffix('.json'); return json.loads(f.read_text()) if f.exists() else {}
+    f = Path(cand).with_suffix('.json'); return json.loads(f.read_text(encoding='utf-8')) if f.exists() else {}
 
 
 def save_meta(cand, data):
-    f = Path(cand).with_suffix('.json'); f.write_text(json.dumps(data, indent=1))
+    f = Path(cand).with_suffix('.json'); f.write_text(json.dumps(data, indent=1), encoding='utf-8')
 
 
 def candidate_files(cand):
@@ -175,7 +175,7 @@ def clip_source(work, voice, ref):
     and every take. A reference is a byte-for-byte copy, and only clips of its exact size are read."""
     ref = Path(ref); side = ref.with_suffix('.json')
     if side.exists():
-        try: return json.loads(side.read_text()).get('from')
+        try: return json.loads(side.read_text(encoding='utf-8')).get('from')
         except ValueError: pass
     work = Path(work).expanduser(); d = work / 'voices' / voice / 'design'
     size = ref.stat().st_size; want = None
@@ -203,4 +203,4 @@ def clip_label(rel):
 
 def note_source(work, voice, src, ref):
     """Records where a new reference came from, beside it (ref/<emotion>.json)."""
-    f = Path(ref).with_suffix('.json'); f.write_text(json.dumps({'from': source_by_path(work, voice, src)}, indent=1))
+    f = Path(ref).with_suffix('.json'); f.write_text(json.dumps({'from': source_by_path(work, voice, src)}, indent=1), encoding='utf-8')

@@ -19,6 +19,8 @@ An NVIDIA GPU with 16 GB or more is recommended.
 
 ## Quick start
 
+Linux:
+
 ```bash
 git clone https://github.com/storshun/VerbalineForGames.git && cd VerbalineForGames
 # The studio, recording and scoring (install PyTorch with CUDA for your driver first: pytorch.org)
@@ -27,6 +29,23 @@ python3.11 -m venv ~/venvs/verbaline && ~/venvs/verbaline/bin/pip install -e '.[
 python3.11 -m venv ~/venvs/qwen && ~/venvs/qwen/bin/pip install -e . qwen-tts
 mkdir -p ~/.config/verbaline && printf '[envs]\nqwen = "~/venvs/qwen/bin/python"\n' >> ~/.config/verbaline/config.toml
 ~/venvs/verbaline/bin/verbaline --project examples/minimal serve
+# open http://localhost:8765
+```
+
+Windows (PowerShell, with Python 3.11 from python.org and git). PyPI's PyTorch for Windows has no CUDA, so each
+environment gets PyTorch from pytorch.org first; `cu128` suits a current driver (pytorch.org lists the others):
+
+```powershell
+git clone https://github.com/storshun/VerbalineForGames.git; cd VerbalineForGames
+py -3.11 -m venv "$HOME\venvs\verbaline"
+& "$HOME\venvs\verbaline\Scripts\pip" install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
+& "$HOME\venvs\verbaline\Scripts\pip" install -e ".[record,score]"
+py -3.11 -m venv "$HOME\venvs\qwen"
+& "$HOME\venvs\qwen\Scripts\pip" install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
+& "$HOME\venvs\qwen\Scripts\pip" install -e . qwen-tts
+New-Item -ItemType Directory -Force "$HOME\.config\verbaline" | Out-Null
+Add-Content -Encoding utf8 "$HOME\.config\verbaline\config.toml" "[envs]`nqwen = `"~/venvs/qwen/Scripts/python.exe`""
+& "$HOME\venvs\verbaline\Scripts\verbaline" --project examples/minimal serve
 # open http://localhost:8765
 ```
 

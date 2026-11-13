@@ -51,7 +51,7 @@ def ref_order(emotion):
 def load_toml(path):
     path = Path(path)
     if not path.exists(): return {}
-    with open(path, 'rb') as f: return tomllib.load(f)
+    return tomllib.loads(path.read_text(encoding='utf-8-sig'))
 
 
 class Ctx:
@@ -75,7 +75,7 @@ class Ctx:
     @property
     def passage(self): return self.cfg['project'].get('passage', '')
     def path(self, *p): return self.work.joinpath(*p)
-    def rel(self, p): return str(Path(p).resolve().relative_to(self.work.resolve()))
+    def rel(self, p): return Path(p).resolve().relative_to(self.work.resolve()).as_posix()   # forward slashes on Windows too
     def voice_cfg(self, v): return self.cast.get('voices', {}).get(v, {})
     def engine(self, v):
         """The text-to-speech engine a voice uses: its cast.toml engine, else the config's default (local). An engine
@@ -91,16 +91,16 @@ class Ctx:
         for e in ref_order(emotion):
             w = self.path('voices', voice, 'ref', e + '.wav')
             if w.exists():
-                t = w.with_suffix('.txt'); return w, (t.read_text().strip() if t.exists() else '')
+                t = w.with_suffix('.txt'); return w, (t.read_text(encoding='utf-8').strip() if t.exists() else '')
         return None, ''
     def lines(self):
         p = self.path('lines.csv')
         if not p.exists(): sys.exit('No lines yet: run `verbaline lines` first.')
-        with open(p, newline='') as f: return list(csv.DictReader(f))
+        with open(p, newline='', encoding='utf-8') as f: return list(csv.DictReader(f))
     def json(self, name, default):
-        p = self.path(name); return json.loads(p.read_text()) if p.exists() else default
+        p = self.path(name); return json.loads(p.read_text(encoding='utf-8')) if p.exists() else default
     def save_json(self, name, data):
-        p = self.path(name); tmp = p.with_suffix('.tmp'); tmp.write_text(json.dumps(data, indent=1)); tmp.replace(p)
+        p = self.path(name); tmp = p.with_suffix('.tmp'); tmp.write_text(json.dumps(data, indent=1), encoding='utf-8'); tmp.replace(p)
     def export_name(self, r):
         """An exported pick's file name: [master] name, from the line's fields."""
         return self.cfg['master'].get('name', '{id}').format(id=r['id'], key=r['key'], lang=self.lang, group=r.get('group', ''),
@@ -154,7 +154,7 @@ def cmd_lines(c, a):
             try: r['say'] = tts_text(lineparts.plain(lineparts.parse(r['parts'], r['emotion'])), c.say)
             except ValueError as e: print(f'  {r["id"]}: its parts can\'t be read ({e}): no takes until they\'re fixed')
     stale = sorted(set(c.dirs) - {r['id'] for r in rows})
-    with open(c.path('lines.csv'), 'w', newline='') as f:
+    with open(c.path('lines.csv'), 'w', newline='', encoding='utf-8') as f:
         w = csv.DictWriter(f, fieldnames=COLUMNS); w.writeheader(); w.writerows(rows)
     c.save_json('groups.json', c.project.groups(c, rows))
     clips = len({r['key'] for r in rows})
@@ -191,7 +191,7 @@ def same_words(a, b): return ' '.join((a or '').split()) == ' '.join((b or '').s
 
 def made_from(c, key):
     """{take file: {text, at}}: the words each take was made from (a take whose words changed since is outdated)."""
-    f = c.path('takes', key, 'made.json'); return json.loads(f.read_text()) if f.exists() else {}
+    f = c.path('takes', key, 'made.json'); return json.loads(f.read_text(encoding='utf-8')) if f.exists() else {}
 
 
 def record_made(c, key, name, text, ref=None, shift=None, **more):
@@ -237,7 +237,7 @@ def cmd_design(c, a):
             for n in range(have + 1, have + a.n + 1):
                 seed = random.randrange(1, 2 ** 31); cand = out / f'cand_{n}.wav'
                 q.design(vc['description'], passage, cand, seed=seed)
-                cand.with_suffix('.txt').write_text(passage)
+                cand.with_suffix('.txt').write_text(passage, encoding='utf-8')
                 workfiles.save_meta(cand, dict(method='design', seed=seed, description=vc['description'], style=q.STYLE,
                                               model=q.MODEL, text=passage, at=time.strftime('%Y-%m-%d %H:%M')))
             print(f'{v}: {a.n} candidates in {out} (listen, then `verbaline choose --voice {v} --candidate N`)')
@@ -260,11 +260,11 @@ def retry_candidate(c, a):
     text = (a.text or '').strip() or c.voice_cfg(a.voice).get('passage') or c.passage; m = workfiles.meta(cand)
     src = d / 'sources' / cand.name
     if not src.exists(): src = cand                  # never retried: its own audio is the original
-    src_text = src.with_suffix('.txt').read_text().strip() if src.with_suffix('.txt').exists() else ''
+    src_text = src.with_suffix('.txt').read_text(encoding='utf-8').strip() if src.with_suffix('.txt').exists() else ''
     seed = random.randrange(1, 2 ** 31); t0 = time.time()
     n = workfiles.next_candidate(d); out = d / f'cand_{n}.wav'
     with models.Qwen(c) as q: q.say(tts_text(text, c.say), src, src_text, 'neutral', {}, out, seed=seed)
-    out.with_suffix('.txt').write_text(text)
+    out.with_suffix('.txt').write_text(text, encoding='utf-8')
     workfiles.save_meta(out, dict(method='reread', of=a.retry, seed=seed, source=c.rel(src), model=models.Qwen.MODEL,
                                  description=m.get('description', ''), text=text, at=time.strftime('%Y-%m-%d %H:%M')))
     print(f'{a.voice}: candidate {n} is candidate {a.retry}\'s voice reading new words ({time.time() - t0:.1f} s); '
@@ -276,7 +276,7 @@ def cmd_preview(c, a):
     the voice before it's chosen. Written to design/previews/cand_N.<engine>.wav."""
     src = c.path('voices', a.voice, 'design', f'cand_{a.candidate}.wav')
     if not src.exists(): sys.exit(f'No {src}')
-    text = src.with_suffix('.txt').read_text().strip() if src.with_suffix('.txt').exists() else c.passage
+    text = src.with_suffix('.txt').read_text(encoding='utf-8').strip() if src.with_suffix('.txt').exists() else c.passage
     out = src.parent / 'previews' / f'{src.stem}.{a.backend}.wav'; out.parent.mkdir(exist_ok=True)
     with models.backend(a.backend, c) as tts:
         t0 = time.time()
@@ -298,7 +298,7 @@ def clip_info(c, rel):
     p = c.path(rel).resolve(); w = c.work.resolve()
     if not p.exists() or p.suffix != '.wav' or w not in p.parents: sys.exit(f'No {rel}')
     parts = p.relative_to(w).parts
-    txt = p.with_suffix('.txt').read_text().strip() if p.with_suffix('.txt').exists() else ''
+    txt = p.with_suffix('.txt').read_text(encoding='utf-8').strip() if p.with_suffix('.txt').exists() else ''
     if len(parts) == 4 and parts[0] == 'voices' and parts[2] == 'design' and workfiles.CAND.fullmatch(p.stem):
         n = int(p.stem.split('_')[1])
         return p, dict(kind='candidate', voice=parts[1], n=n, method=workfiles.meta(p).get('method', 'design'), text=txt,
@@ -309,7 +309,7 @@ def clip_info(c, rel):
     if len(parts) == 3 and parts[0] == 'takes':
         key = parts[1]; r = next((x for x in c.lines() if x['key'] == key), None)
         sc = c.path('takes', key, 'scores.json')
-        heard = json.loads(sc.read_text()).get(p.name, {}).get('heard', '') if sc.exists() else ''
+        heard = json.loads(sc.read_text(encoding='utf-8')).get(p.name, {}).get('heard', '') if sc.exists() else ''
         return p, dict(kind='take', line=key, take=p.name, voice=r['voice'] if r else '',
                        text=heard or made_from(c, key).get(p.name, {}).get('text', ''), label=f'take {p.stem} of {key}')
     if len(parts) == 2 and parts[0] == 'performances':
@@ -402,7 +402,7 @@ def cmd_restyle(c, a):
                 plan['tries'].append(dict(file=out.name, seed=seed)); print(f'  acted {k + 1} of {a.tries}', flush=True)
         revoice(c, plan, work, src, text, raw=a.raw)
         how = plan['style']
-    (work / 'plan.json').write_text(json.dumps(plan, indent=1))
+    (work / 'plan.json').write_text(json.dumps(plan, indent=1), encoding='utf-8')
     if not plan['tries']: sys.exit(f'{voice}: no tries were made ("{how}"): see the errors above')
     if a.engine != 'editx' and not any('out' in t for t in plan['tries']):
         sys.exit(f'{voice}: Seed-VC made none of the {len(plan["tries"])} conversions (see above); the tries stay in {work}')
@@ -446,7 +446,7 @@ def cmd_restyle_keep(c, a):
     of the line (restyle_<k>.wav, scored with it); the rest go. Nothing kept fails the job."""
     import numpy as np
     voice = a.voice
-    work = c.path('voices', voice, 'design', 'restyle', a.dir); plan = json.loads((work / 'plan.json').read_text())
+    work = c.path('voices', voice, 'design', 'restyle', a.dir); plan = json.loads((work / 'plan.json').read_text(encoding='utf-8'))
     src = c.path(plan['source']); conv = plan.get('engine', 'qwen') != 'editx'
     if not conv:
         for t in plan['tries']: t['out'] = t['file']          # Step-Audio-EditX's edits already have the voice
@@ -481,7 +481,7 @@ def cmd_restyle_keep(c, a):
             kept.append(f'restyle_{k} (voice {t["match"]:.2f}, audio {t["quality"]:.2f})')
         else:
             d = c.path('voices', voice, 'design'); n = workfiles.next_candidate(d); cand = d / f'cand_{n}.wav'
-            shutil.copy2(got, cand); cand.with_suffix('.txt').write_text(plan['text'])
+            shutil.copy2(got, cand); cand.with_suffix('.txt').write_text(plan['text'], encoding='utf-8')
             workfiles.save_meta(cand, dict(method='restyle', style=label, engine=plan.get('engine', 'qwen'), emotion=plan.get('emotion', ''),
                                           source=plan['source'], what=plan['what'], description=plan['description'],
                                           seed=t.get('seed'), shift=t.get('shift'), match=t['match'], quality=t['quality'],
@@ -606,7 +606,7 @@ def cmd_mirror(c, a):
         for o in made:
             kind = Path(o).stem; r = s.score(o, words, tgt, forgive) if words else s.score(o, '', tgt, forgive)
             n = workfiles.next_candidate(d); cand = d / f'cand_{n}.wav'; shutil.copy2(o, cand)
-            cand.with_suffix('.txt').write_text(words or r['heard'])
+            cand.with_suffix('.txt').write_text(words or r['heard'], encoding='utf-8')
             workfiles.save_meta(cand, dict(method='mirror', kind=kind, shift=shift if kind == 'pitch' else None, tuned=bool(tuned[kind]),
                                           came=c.rel(src), came_what={k: v for k, v in came.items() if k != 'text'},
                                           into=c.rel(tgt), into_what={k: v for k, v in into.items() if k != 'text'},
@@ -683,7 +683,7 @@ def cmd_beat(c, a):
 def cmd_choose(c, a):
     src = c.path('voices', a.voice, 'design', f'cand_{a.candidate}.wav')
     if not src.exists(): sys.exit(f'No {src}')
-    promote(c, src, a.voice, a.emotion, src.with_suffix('.txt').read_text())
+    promote(c, src, a.voice, a.emotion, src.with_suffix('.txt').read_text(encoding='utf-8'))
 
 
 def promote(c, src, voice, emotion, text):
@@ -694,7 +694,7 @@ def promote(c, src, voice, emotion, text):
         # Its transcript goes with it (until Nov 6 it was overwritten, so a kept reference lost the words Qwen reads).
         if dst.with_suffix('.txt').exists(): dst.with_suffix('.txt').replace(old.with_suffix('.txt'))
         print(f'  kept the old one as {old.name}')
-    shutil.copy2(src, dst); dst.with_suffix('.txt').write_text(text.strip())
+    shutil.copy2(src, dst); dst.with_suffix('.txt').write_text(text.strip(), encoding='utf-8')
     workfiles.note_source(c.work, voice, src, dst)             # ref-source: which candidate or take it came from
     print(f'{voice}: {emotion} reference is now {Path(src).name}')
 
@@ -741,7 +741,7 @@ def cmd_record(c, a):
                 peak = float(np.abs(audio).max())
                 n = workfiles.next_performance(out, r['key'])
                 last = out / f'{r["key"]}_p{n}.wav'; sf.write(last, audio, sr, subtype='PCM_24')
-                last.with_suffix('.txt').write_text(r['text'])     # the words it was recorded with
+                last.with_suffix('.txt').write_text(r['text'], encoding='utf-8')     # the words it was recorded with
                 warn = '  (clipping: back off the mic)' if peak > .98 else '  (quiet: move closer)' if peak < .1 else ''
                 print(f'  saved {last.name}, {len(audio) / sr:.1f} s{warn}')
 
@@ -765,7 +765,7 @@ def cmd_convert(c, a):
         out = c.path('takes', r['key']); out.mkdir(parents=True, exist_ok=True); made = made_from(c, r['key'])
         for p in performances(c, r['key']):
             if a.perf and p.stem != a.perf: continue
-            words = p.with_suffix('.txt').read_text().strip() if p.with_suffix('.txt').exists() else r['text']
+            words = p.with_suffix('.txt').read_text(encoding='utf-8').strip() if p.with_suffix('.txt').exists() else r['text']
             # Two takes per recording: "clone" (the timbre model: the voice's own sound and pitch, your timing and a
             # looser read of your intonation) and "pitch" (the pitch-following model: your intonation note for note,
             # moved by the line's pitch shift). Each with the voice's tuned model of that kind when it has one.
@@ -849,7 +849,8 @@ def train_model(c, a, seed, v, kind, data, clips, mins):
     if t.get('gpu_slot') and slot.exists(): cmd = [str(slot), '--need', '10000', *cmd]
     env = dict(os.environ, HF_HUB_CACHE='./checkpoints/hf_cache', HF_HUB_OFFLINE='1')
     t0 = time.time(); tail = collections.deque(maxlen=25)
-    p = subprocess.Popen(cmd, cwd=seed.repo, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    p = subprocess.Popen(cmd, cwd=seed.repo, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                         encoding='utf-8', errors='replace')
     for raw in p.stdout:
         for line in filter(None, (x.strip() for x in raw.split('\r'))):
             tail.append(line)
@@ -866,7 +867,7 @@ def train_model(c, a, seed, v, kind, data, clips, mins):
             if (d / f).exists(): (d / f).replace(d / 'previous' / f)
     shutil.move(made, d / 'model.pth'); shutil.copy2(run / preset, d / 'config.yml'); shutil.rmtree(run)
     (d / 'model.json').write_text(json.dumps(dict(f0=f0, steps=steps, clips=len(clips), minutes=round(mins, 1),
-                                                  trained=time.strftime('%Y-%m-%d %H:%M'), secs=round(time.time() - t0)), indent=1))
+                                                  trained=time.strftime('%Y-%m-%d %H:%M'), secs=round(time.time() - t0)), indent=1), encoding='utf-8')
     print(f'{v}: tuned {kind} model saved ({(time.time() - t0) / 60:.0f} min).', flush=True)
 
 
@@ -898,7 +899,7 @@ def cmd_tts(c, a):
             if a.ref:
                 ref = c.path('voices', r['voice'], 'ref', a.ref + '.wav')
                 if needs_ref and not ref.exists(): print(f'{r["key"]}: {r["voice"]} has no {a.ref} reference'); continue
-                t = ref.with_suffix('.txt'); ref_text = t.read_text().strip() if t.exists() else ''
+                t = ref.with_suffix('.txt'); ref_text = t.read_text(encoding='utf-8').strip() if t.exists() else ''
             else: ref, ref_text = c.ref(r['voice'], r['emotion'])
             if needs_ref and not ref: print(f'{r["key"]}: {r["voice"]} has no reference voice yet (design + choose)'); continue
             out = c.path('takes', r['key']); out.mkdir(parents=True, exist_ok=True)
@@ -967,7 +968,7 @@ def cmd_score(c, a):
         return d.get('v') != SCORE_VERSION or d.get('mtime') != t.stat().st_mtime or not same_words(d.get('text'), r['text']) \
             or d.get('ref') != (ref.name if ref else None) or d.get('ref_mtime') != (ref.stat().st_mtime if ref else None)
     def unscored(r):
-        f = c.path('takes', r['key'], 'scores.json'); done = json.loads(f.read_text()) if f.exists() else {}
+        f = c.path('takes', r['key'], 'scores.json'); done = json.loads(f.read_text(encoding='utf-8')) if f.exists() else {}
         made = made_from(c, r['key'])
         return [t for t in takes(c, r['key']) if stale(r, t, done, made)]
     rows = [r for r in rows if unscored(r)]
@@ -999,7 +1000,7 @@ def cmd_score(c, a):
                 if res['edges']: res['total'] = min(res['total'], .5)
                 scores[t.name] = res; new += 1
             for gone in set(scores) - {t.name for t in found}: del scores[gone]
-            (folder / 'scores.json').write_text(json.dumps(scores, indent=1))
+            (folder / 'scores.json').write_text(json.dumps(scores, indent=1), encoding='utf-8')
             if new: print(f'{r["key"]}: scored {new}, best {max(v["total"] for v in scores.values()):.2f}')
 
 
@@ -1071,10 +1072,10 @@ def cmd_apply(c, a):
         output lacks `expect`. Returns its output."""
         print(f'{label}...', flush=True); t0 = time.time()
         log = logs / f'apply_{stamp}_{re.sub(r"[^a-z0-9]+", "_", label.lower())[:40]}.log'
-        try: r = subprocess.run([str(x) for x in argv], cwd=cwd or c.project.root, capture_output=True, text=True, timeout=timeout); out, rc = r.stdout + r.stderr, r.returncode
+        try: r = subprocess.run([str(x) for x in argv], cwd=cwd or c.project.root, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=timeout); out, rc = r.stdout + r.stderr, r.returncode
         except subprocess.TimeoutExpired as e: out, rc = f'{e.stdout or ""}{e.stderr or ""}\ntimed out after {timeout} s', -1
         except OSError as e: out, rc = f'could not start {argv[0]}: {e}', -1
-        log.write_text(out)
+        log.write_text(out, encoding='utf-8')
         if rc or (expect and expect not in out):
             sys.exit(f'{label} failed (exit {rc}). Log: {log}\n' + '\n'.join(out.strip().splitlines()[-10:]))
         print(f'  done in {time.time() - t0:.0f} s', flush=True)
@@ -1091,7 +1092,7 @@ def cmd_apply(c, a):
     missing = sorted(k for k, p in picks.items() if not c.path(p['take']).is_file())
     a.lang, a.force, a.from_apply = None, False, True; cmd_master(c, a)
     manifest = projects.write_manifest(c, rows, picks, c.path('export', c.lang), c.export_name)
-    print(f'Manifest: {manifest} ({len(json.loads(manifest.read_text())["lines"])} lines)', flush=True)
+    print(f'Manifest: {manifest} ({len(json.loads(manifest.read_text(encoding="utf-8"))["lines"])} lines)', flush=True)
     c.no_test = bool(getattr(a, 'no_test', False))           # --no-test: the project may skip its own checks
     c.project.apply(c, manifest, run)
     c.save_json('applied.json', dict(at=time.strftime('%Y-%m-%d %H:%M:%S'), words={r['id']: r['text'] for r in rows},
@@ -1129,15 +1130,15 @@ def cmd_refcheck(c, a):
         d = c.path('voices', v, 'ref')
         for w in sorted(d.glob('*.wav')) if d.exists() else []:
             if w.stem not in EMOTIONS or (a.emotion and w.stem != a.emotion): continue
-            t = w.with_suffix('.txt'); have = t.read_text().strip() if t.exists() else ''
+            t = w.with_suffix('.txt'); have = t.read_text(encoding='utf-8').strip() if t.exists() else ''
             segs, _ = asr.transcribe(str(w), language='en', beam_size=5)
             heard = ' '.join(s.text.strip() for s in segs).strip(); checked += 1
             whole, start, end = ref_mismatch(have, heard)
             # Whisper writes "gonna" as "going to", "Firebrand" as "fire brand": compare letters, and only rewrite a
             # transcript that's really off, overall or at either end (where leaked words come from).
             if not have or whole > a.tolerance or start > .3 or end > .3:
-                if have: t.with_suffix('.txt.was').write_text(have)
-                t.write_text(heard); fixed += 1
+                if have: t.with_suffix('.txt.was').write_text(have, encoding='utf-8')
+                t.write_text(heard, encoding='utf-8'); fixed += 1
                 print(f'{v} {w.stem}: transcript fixed ({whole:.0%} different; start {start:.0%}, end {end:.0%})'
                       f'\n  was:   {have}\n  heard: {heard}')
     print(f'{checked} references checked, {fixed} transcripts fixed.')
@@ -1148,7 +1149,16 @@ def cmd_serve(c, a):
     server.serve(c, a.port or int(c.cfg['project'].get('port', 8765)), lambda: cmd_lines(c, a))
 
 
+def utf8_everywhere():
+    """Windows defaults text to its code page (cp1252 and friends), which can't hold the studio's words or symbols:
+    its own output, and every Python it starts (jobs, model environments, runners, an Apply command), use UTF-8."""
+    os.environ.setdefault('PYTHONUTF8', '1'); os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+    for s in (sys.stdout, sys.stderr):
+        if s and s.encoding.lower().replace('-', '') != 'utf8': s.reconfigure(encoding='utf-8', errors='replace')
+
+
 def main():
+    utf8_everywhere()
     p = argparse.ArgumentParser(prog='verbaline', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--project', help='the project\'s folder (its verbaline.toml); default: $VERBALINE_PROJECT, '
                                      'else the nearest verbaline.toml from here up')
@@ -1234,7 +1244,12 @@ def reexec(c, a):
     if env == 'xai': env = None                                  # a web request: runs anywhere
     python = os.path.expanduser(c.cfg.get('envs', {}).get(env, '') if env else '')
     # Compare without resolving symlinks: every venv's python links to the same base interpreter.
-    if python and os.path.abspath(python) != os.path.abspath(sys.executable):
+    same = lambda a, b: os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))   # C:\ vs c:/ on Windows
+    if python and not same(python, sys.executable):
+        if not os.path.isfile(python):
+            sys.exit(f'[envs] {env} in the config names {python}, which is not a file'
+                     + (' (on Windows a venv\'s Python is Scripts/python.exe, not bin/python)' if os.name == 'nt' else ''))
+        if os.name == 'nt': sys.exit(subprocess.call([python, __file__, *sys.argv[1:]]))   # Windows has no real exec
         os.execv(python, [python, __file__, *sys.argv[1:]])
 
 

@@ -32,13 +32,13 @@ LINE_FIELDS = ('voice', 'emotion', 'note', 'say', 'engine', 'pitch_shift', 'part
 
 def _load(name):
     p = _path(name)
-    return tomlkit.parse(p.read_text()) if p.exists() else tomlkit.document()
+    return tomlkit.parse(p.read_text(encoding='utf-8-sig')) if p.exists() else tomlkit.document()
 
 
 def _save(name, doc):
     text = re.sub(r'\n{3,}', '\n\n', tomlkit.dumps(doc)).rstrip('\n') + '\n'   # removed tables leave blank lines
     p = _path(name); p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_suffix('.tmp'); tmp.write_text(text); tmp.replace(p)
+    tmp = p.with_suffix('.tmp'); tmp.write_text(text, encoding='utf-8'); tmp.replace(p)
 
 
 def set_voice(voice, fields):

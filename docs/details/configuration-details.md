@@ -1,8 +1,10 @@
 # Configuration: details
 
 The concept is in docs/Install.md. Three layers, later winning table by table: `verbaline/defaults.toml`, the
-machine's `~/.config/verbaline/config.toml` (or `$VERBALINE_CONFIG`), the project's `verbaline.toml`. Paths
-expand `~`; a project's relative paths are from its root.
+machine's `~/.config/verbaline/config.toml` (or `$VERBALINE_CONFIG`; on Windows `~` is `%USERPROFILE%`), the
+project's `verbaline.toml`. Paths expand `~`; a project's relative paths are from its root. Write Windows paths with
+forward slashes (`"C:/Games/vo"`) or in single quotes (`'C:\Games\vo'`): in double quotes TOML reads a backslash as an
+escape. Every file is read as UTF-8, with or without a byte-order mark.
 
 Environment variables: `VERBALINE_PROJECT` (the project), `VERBALINE_WORK` (the work folder, over `work_dir`),
 `VERBALINE_CONFIG` (the machine's config), `XAI_API_KEY`, `VERBALINE_EDITX_GPU` (EditX's share of GPU memory,

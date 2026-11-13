@@ -20,6 +20,11 @@ USER_CONFIG = Path(os.path.expanduser(os.environ.get('VERBALINE_CONFIG') or '~/.
 HOOKS = ('lines', 'groups', 'set_words', 'game_state', 'apply', 'timeline', 'watch')
 
 
+def read_toml(path):
+    """A TOML file, read as UTF-8 whatever the system's code page (a byte-order mark from Windows editors is fine)."""
+    return tomllib.loads(Path(path).read_text(encoding='utf-8-sig'))
+
+
 def merge(base, over):
     """`over` laid onto `base`, tables merged key by key."""
     out = dict(base)
@@ -55,10 +60,10 @@ class Project:
         self.reload()
 
     def reload(self):
-        with open(HERE / 'defaults.toml', 'rb') as f: cfg = tomllib.load(f)
+        cfg = read_toml(HERE / 'defaults.toml')
         if USER_CONFIG.exists():
-            with open(USER_CONFIG, 'rb') as f: cfg = merge(cfg, tomllib.load(f))
-        with open(self.file, 'rb') as f: own = tomllib.load(f)
+            cfg = merge(cfg, read_toml(USER_CONFIG))
+        own = read_toml(self.file)
         self.cfg = merge(cfg, own)
         p = self.cfg.setdefault('project', {})
         self.name = p.get('name') or self.root.name
@@ -135,7 +140,7 @@ class Project:
         tracked = self.cfg.get('apply', {}).get('words_from_manifest', False)
         f = ctx.path('applied.json')
         if not f.exists(): return ({} if tracked else None), {}
-        d = json.loads(f.read_text())
+        d = json.loads(f.read_text(encoding='utf-8'))
         return (d.get('words', {}) if tracked else None), d.get('picks', {})
 
     def watch(self, ctx):
@@ -158,7 +163,7 @@ class Project:
             argv = [str(x).format(**fill) for x in (a['command'] if isinstance(a['command'], list) else a['command'].split())]
             run(a.get('label', 'Run the project\'s apply command'), argv)
         elif a.get('copy_to'):
-            dst = self.path(a['copy_to']); dst.mkdir(parents=True, exist_ok=True); m = json.loads(Path(manifest).read_text())
+            dst = self.path(a['copy_to']); dst.mkdir(parents=True, exist_ok=True); m = json.loads(Path(manifest).read_text(encoding='utf-8'))
             keep = {Path(x['file']).name for x in m['lines'].values()}
             for name in keep: shutil.copy2(Path(manifest).parent / name, dst / name)
             if a.get('prune', False):
@@ -196,11 +201,11 @@ class FileLines:
 
     def lines(self):
         if self.kind == 'csv':
-            with open(self.path, newline='') as f: return [{k: v for k, v in r.items() if v not in (None, '')} for r in csv.DictReader(f)]
+            with open(self.path, newline='', encoding='utf-8-sig') as f: return [{k: v for k, v in r.items() if v not in (None, '')} for r in csv.DictReader(f)]
         if self.kind == 'json':
-            d = json.loads(self.path.read_text())
+            d = json.loads(self.path.read_text(encoding='utf-8-sig'))
         else:
-            with open(self.path, 'rb') as f: d = tomllib.load(f)
+            d = read_toml(self.path)
         if isinstance(d, dict) and isinstance(d.get('line'), list): d = d['line']
         elif isinstance(d, dict) and isinstance(d.get('lines'), list): d = d['lines']
         elif isinstance(d, dict): d = [dict(v, id=k) for k, v in d.items() if isinstance(v, dict)]
@@ -210,7 +215,7 @@ class FileLines:
         ids = set(ids); n = 0
         if self.kind == 'toml':
             import tomlkit
-            doc = tomlkit.parse(self.path.read_text())
+            doc = tomlkit.parse(self.path.read_text(encoding='utf-8-sig'))
             if isinstance(doc.get('line'), list):                     # [[line]] tables, each with its id
                 for t in doc['line']:
                     if t.get('id') in ids: t['text'] = text; n += 1
@@ -219,7 +224,7 @@ class FileLines:
                     if k in ids and isinstance(doc[k], dict): doc[k]['text'] = text; n += 1
             out = tomlkit.dumps(doc)
         elif self.kind == 'json':
-            d = json.loads(self.path.read_text()); items = d['line'] if isinstance(d, dict) and isinstance(d.get('line'), list) else \
+            d = json.loads(self.path.read_text(encoding='utf-8-sig')); items = d['line'] if isinstance(d, dict) and isinstance(d.get('line'), list) else \
                 d['lines'] if isinstance(d, dict) and isinstance(d.get('lines'), list) else d
             if isinstance(items, list):
                 for x in items:
@@ -228,13 +233,13 @@ class FileLines:
                 for k in ids & set(items): items[k]['text'] = text; n += 1
             out = json.dumps(d, indent=2, ensure_ascii=False) + '\n'
         else:
-            with open(self.path, newline='') as f: rows = list(csv.DictReader(f)); fields = list(rows[0]) if rows else ['id', 'speaker', 'text']
+            with open(self.path, newline='', encoding='utf-8-sig') as f: rows = list(csv.DictReader(f)); fields = list(rows[0]) if rows else ['id', 'speaker', 'text']
             for r in rows:
                 if r.get('id') in ids: r['text'] = text; n += 1
             import io
             buf = io.StringIO(); w = csv.DictWriter(buf, fields, lineterminator='\n'); w.writeheader(); w.writerows(rows); out = buf.getvalue()
         if not n: raise ValueError(f'no line {", ".join(sorted(ids))} in {self.path.name}')
-        tmp = self.path.with_suffix(self.path.suffix + '.tmp'); tmp.write_text(out); tmp.replace(self.path)
+        tmp = self.path.with_suffix(self.path.suffix + '.tmp'); tmp.write_text(out, encoding='utf-8'); tmp.replace(self.path)
 
 
 # ------------------------------------------------------------------ Apply's manifest
@@ -254,5 +259,5 @@ def write_manifest(ctx, rows, picks, export_dir, name_of):
                               key=r['key'], take=p['take'], seconds=round(sf.info(str(f)).duration, 3))
     m = dict(project=ctx.project.name, language=ctx.lang, made=time.strftime('%Y-%m-%d %H:%M:%S'), lines=lines)
     out = Path(export_dir) / 'manifest.json'; tmp = out.with_suffix('.tmp')
-    tmp.write_text(json.dumps(m, indent=1, ensure_ascii=False)); tmp.replace(out)
+    tmp.write_text(json.dumps(m, indent=1, ensure_ascii=False), encoding='utf-8'); tmp.replace(out)
     return out

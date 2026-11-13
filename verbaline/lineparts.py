@@ -126,24 +126,24 @@ def tries(work, key, pid):
 
 def made(work, key, pid):
     f = folder(work, key, pid) / 'made.json'
-    return json.loads(f.read_text()) if f.exists() else {}
+    return json.loads(f.read_text(encoding='utf-8')) if f.exists() else {}
 
 
 def note_try(work, key, pid, name, **info):
     f = folder(work, key, pid) / 'made.json'; m = made(work, key, pid)
     m[name] = dict(info, at=time.strftime('%Y-%m-%d %H:%M'))
-    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1)); tmp.replace(f)
+    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1), encoding='utf-8'); tmp.replace(f)
 
 
 def mix(work, key):
     """{part id: {try: file name, gain: dB}}: the try of each part a join uses (else its newest) and its level."""
     f = folder(work, key) / 'mix.json'
-    return json.loads(f.read_text()) if f.exists() else {}
+    return json.loads(f.read_text(encoding='utf-8')) if f.exists() else {}
 
 
 def save_mix(work, key, m):
     f = folder(work, key) / 'mix.json'; f.parent.mkdir(parents=True, exist_ok=True)
-    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1)); tmp.replace(f)
+    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1), encoding='utf-8'); tmp.replace(f)
 
 
 def chosen(work, key, pid):
@@ -258,8 +258,8 @@ def join_line(c, r, picks=None):
     for x, (a, b) in zip(recipe, spans): x['at'] = [a, b]
     # The voice is judged against the reference of the part that's longest in the take.
     longest = max(recipe, key=lambda x: x['at'][1] - x['at'][0])
-    f = Path(work) / 'takes' / key / 'made.json'; m = json.loads(f.read_text()) if f.exists() else {}
+    f = Path(work) / 'takes' / key / 'made.json'; m = json.loads(f.read_text(encoding='utf-8')) if f.exists() else {}
     m[out.name] = dict(text=r['text'], at=time.strftime('%Y-%m-%d %H:%M'), parts=recipe, secs=round(secs, 2),
                        **({'ref': longest['ref']} if longest['ref'] else {}))
-    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1)); tmp.replace(f)
+    tmp = f.with_suffix('.tmp'); tmp.write_text(json.dumps(m, indent=1), encoding='utf-8'); tmp.replace(f)
     return out

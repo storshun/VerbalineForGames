@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.1 (2026-11-12)
+
+Windows.
+
+- **The page loads on Windows**: every file and job output is read and written as UTF-8. Windows' code page
+  (cp1252) stopped the page itself with "'charmap' codec can't decode byte 0x8f".
+- **Jobs run right on Windows**: a job in a model environment reports its own result (Windows has no real exec, so
+  it used to look finished at once), Cancel stops the whole job, and paths the page sees use forward slashes.
+- **Files from Windows editors**: TOML, JSON and CSV with a byte-order mark read fine.
+- **Clearer errors**: a config naming a Python that isn't there says so (and, on Windows, that a venv's Python is
+  `Scripts/python.exe`); the xAI key message says how to set it on Windows.
+- **Voice scoring on Windows** copies speechbrain's model files instead of linking them, which Windows refuses
+  without Developer Mode.
+- **A Windows test run** on GitHub for every push: the tests, then the quick start until the page answers.
+- **Docs**: a PowerShell quick start, and a Windows section in the install details (PyTorch from pytorch.org, paths
+  in TOML, what's Linux only).
+
 ## 0.1.0 (2026-11-12)
 
 The first public release.

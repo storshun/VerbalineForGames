@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "verbaline-for-games"
-version = "0.1.0"
+version = "0.1.1"
 description = "A local page for directing, voicing and picking every line of a game's dialogue, with open models"
 readme = "README.md"
 license = "Apache-2.0"

@@ -17,6 +17,7 @@ The concept is in docs/Development.md.
 | `verbaline/runners/` | batch runners for Seed-VC and Step-Audio-EditX, run in their own Pythons |
 | `verbaline/defaults.toml` | every setting's default |
 | `scripts/` | `install_service.sh`, `install_editx.sh` |
+| `.github/workflows/` | `windows.yml`: the tests and the quick start on Windows |
 | `examples/` | `minimal` (a lines file, Apply copying) and `adapter` (every hook, a timeline) |
 | `tests/test_verbaline.py` | the checks |
 
@@ -38,7 +39,14 @@ work folder, and checks: the emotion and engine tables agree; restyle presets ar
 job kind's steps and refusals; reference fallback; take order and checks; register shifts and restyle keeping; parts
 markup, part ids, joining (gaps, levels, room tone, resampling) and generation with a stand-in engine; lines files in
 TOML, JSON and CSV with edits written back; config layering; line validation; Apply with `copy_to` and `command`; the
-manifest; word tracking; the adapter example's hooks and timeline. Add a check with every behavior change.
+manifest; word tracking; the adapter example's hooks and timeline; every text file and pipe naming its encoding. Add
+a check with every behavior change.
+
+On GitHub, `.github/workflows/windows.yml` runs them on Windows for every push and pull request, then follows the
+README's Windows quick start (its config line in Windows PowerShell, `verbaline lines`, `serve`) until the page and
+`/api/state` answer. It has no GPU, so the models aren't in it. To check Windows text handling on Linux, run the
+tests with `PYTHONUTF8=0 LC_ALL=en_US.CP1252` (a locale the system lacks falls back to ASCII, which is stricter than
+cp1252).
 
 ## Changing the project API
 

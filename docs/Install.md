@@ -13,6 +13,9 @@ a machine's config never names a game.
 The page can run by hand (`verbaline serve`) or as a background service that's always up, one per project, each on
 its own port.
 
+It runs on Linux and Windows. On Windows the steps are the same with Windows paths and PyTorch from pytorch.org;
+Step-Audio-EditX and the service script are Linux only.
+
 ## Expected outcome
 
 On a machine with an NVIDIA GPU and its driver, a new user goes from a clone to generating takes for the example

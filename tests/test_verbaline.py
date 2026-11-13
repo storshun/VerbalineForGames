@@ -10,18 +10,19 @@ word edits written back, groups, Apply's export, manifest and copy, and an adapt
 import csv, io, json, os, shutil, sys, tempfile, wave
 from pathlib import Path
 
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')   # its symbols, on a Windows code page too
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 TMP = tempfile.TemporaryDirectory(prefix='verbaline_test_')
 PROJECT = Path(TMP.name) / 'project'; WORK = Path(TMP.name) / 'work'
 (PROJECT / 'verbaline').mkdir(parents=True); WORK.mkdir()
-(PROJECT / 'verbaline.toml').write_text('[project]\nname = "Test"\n\n[lines]\nfile = "lines.toml"\n\n[apply]\ncopy_to = "game/vo"\n')
+(PROJECT / 'verbaline.toml').write_text('[project]\nname = "Test"\n\n[lines]\nfile = "lines.toml"\n\n[apply]\ncopy_to = "game/vo"\n', encoding='utf-8')
 (PROJECT / 'lines.toml').write_text('''[[line]]
 id = "intro_alarm"
 group = "intro"
 speaker = "Lead"
 text = "We'll deal with the POSErs later. All hands, battle stations!"
-''')
+''', encoding='utf-8')
 (PROJECT / 'verbaline' / 'cast.toml').write_text('''[speakers]
 "Lead" = "lead"
 "Pilot" = "pilot"
@@ -31,8 +32,8 @@ description = "A test voice."
 
 [voices.pilot]
 description = "Another test voice."
-''')
-(PROJECT / 'verbaline' / 'pronunciations.toml').write_text('[say]\n"POSErs" = "posers"\n')
+''', encoding='utf-8')
+(PROJECT / 'verbaline' / 'pronunciations.toml').write_text('[say]\n"POSErs" = "posers"\n', encoding='utf-8')
 os.environ['VERBALINE_WORK'] = str(WORK); os.environ['VERBALINE_PROJECT'] = str(PROJECT)
 sys.path.insert(0, str(REPO))
 from verbaline import cli as vo, server as vo_audition, workfiles as vo_files, models as vo_models, lineparts as vo_parts   # noqa: E402
@@ -56,7 +57,7 @@ def tone(path, secs=0.5):
     path.parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(path), 'wb') as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(b'\0\0' * int(16000 * secs))
-    path.with_suffix('.txt').write_text('This is a test.')
+    path.with_suffix('.txt').write_text('This is a test.', encoding='utf-8')
 
 
 # ------------------------------------------------------------------ the lists agree
@@ -92,7 +93,7 @@ work = WORK
 tone(work / 'voices/lead/ref/neutral.wav'); tone(work / 'voices/lead/ref/shouting.wav'); tone(work / 'voices/lead/design/cand_3.wav')
 tone(work / 'voices/pilot/ref/neutral.wav'); tone(work / 'takes/intro_alarm/qwen_2.wav'); tone(work / 'performances/intro_alarm_p1.wav')
 cols = [c for c in vo.COLUMNS if c != 'parts']
-with open(work / 'lines.csv', 'w', newline='') as f:
+with open(work / 'lines.csv', 'w', newline='', encoding='utf-8') as f:
     w = csv.DictWriter(f, cols); w.writeheader()
     w.writerow(dict(key='intro_alarm', id='intro_alarm', group='intro', speaker='Lead', voice='lead', voice_default='lead',
                     text="We'll deal with the POSErs later. All hands, battle stations!", say="We'll deal with the POSErs later. All hands, battle stations!",
@@ -204,7 +205,7 @@ check(f'one cloned from a reference replaced since is ({o})', o == dict(emotion=
 check('a mirror says nothing about older voices', vo_audition.older_ref(c, 'lead', mk['mirror_1_pitch_ft.wav']) is None)
 for n in ('qwen_2.wav', 'mirror_1_pitch_ft.wav', 'restyle_1.wav'): tone(work / 'takes/intro_alarm' / n, 1.5)   # 1-30 s clips only
 sc = {n: dict(wer=0, total=.95, voice=.95) for n in ('qwen_2.wav', 'mirror_1_pitch_ft.wav', 'restyle_1.wav')}
-(work / 'takes/intro_alarm/scores.json').write_text(json.dumps(sc))
+(work / 'takes/intro_alarm/scores.json').write_text(json.dumps(sc), encoding='utf-8')
 names = {p.name for p, _ in vo_files.training_clips(work, 'lead')}
 check(f'a voice\'s fine-tune never learns from mirrors or restyles ({sorted(names)})', 'qwen_2.wav' in names and not names & {'mirror_1_pitch_ft.wav', 'restyle_1.wav'})
 
@@ -236,7 +237,7 @@ check('a Step-Audio-EditX restyle has no conversion to keep raw', vo_models.edit
 for n in ('qwen_3.wav', 'qwen_4.wav'): tone(work / 'takes/intro_alarm' / n, 1.5)
 sc.update({'qwen_2.wav': dict(wer=0, total=.97, voice=1, quality=.9), 'qwen_3.wav': dict(wer=0, total=.82, voice=.7, quality=.85),
            'qwen_4.wav': dict(wer=.5, total=0, voice=.9, quality=.9)})
-(work / 'takes/intro_alarm/scores.json').write_text(json.dumps(sc))
+(work / 'takes/intro_alarm/scores.json').write_text(json.dumps(sc), encoding='utf-8')
 for k, n in enumerate(('qwen_9.wav', 'qwen_2.wav', 'qwen_3.wav', 'qwen_4.wav')):
     os.utime(work / 'takes/intro_alarm' / n, (1e9 + k, 1e9 + k))  # qwen_4 the newest
 L = next(x for x in vo_audition.state(c, lambda: None) if x['key'] == 'intro_alarm')
@@ -299,10 +300,10 @@ check(f'...and the gap is the take\'s own room sound, not digital silence ({lv(m
 # The parts made: a fake engine stands in for Qwen3-TTS (a tone as long as the words), so no voice is generated.
 KEY = 'storm_gone'
 tone(work / 'voices/lead/ref/sad.wav'); tone(work / 'voices/lead/ref/urgent.wav')
-with open(work / 'lines.csv', newline='') as f: rows = list(csv.DictReader(f))
+with open(work / 'lines.csv', newline='', encoding='utf-8') as f: rows = list(csv.DictReader(f))
 rows.append(dict(rows[0], key=KEY, id=KEY, group='storm', text=vo_parts.plain(P), say=vo_parts.plain(P), emotion='urgent', note=''))
 for r in rows: r['parts'] = EXAMPLE if r['key'] == KEY else ''
-with open(work / 'lines.csv', 'w', newline='') as f:
+with open(work / 'lines.csv', 'w', newline='', encoding='utf-8') as f:
     w = csv.DictWriter(f, cols + ['parts']); w.writeheader(); w.writerows(rows)
 said = []
 
@@ -377,10 +378,10 @@ import tomllib                                                                  
 
 LINES = [dict(id='a_1', group='a', speaker='Lead', text='First words.'), dict(id='b_1', group='b', speaker='Pilot', text='Second words.', emotion='calm')]
 d = Path(TMP.name) / 'files'; d.mkdir()
-(d / 'l.toml').write_text('# kept comment\n' + ''.join(f'[[line]]\nid = "{l["id"]}"\ngroup = "{l["group"]}"\nspeaker = "{l["speaker"]}"\ntext = "{l["text"]}"\n\n' for l in LINES))
-(d / 'l.json').write_text(json.dumps(dict(lines=LINES)))
-(d / 'k.json').write_text(json.dumps({l['id']: {k: v for k, v in l.items() if k != 'id'} for l in LINES}))
-with open(d / 'l.csv', 'w', newline='') as f:
+(d / 'l.toml').write_text('# kept comment\n' + ''.join(f'[[line]]\nid = "{l["id"]}"\ngroup = "{l["group"]}"\nspeaker = "{l["speaker"]}"\ntext = "{l["text"]}"\n\n' for l in LINES), encoding='utf-8')
+(d / 'l.json').write_text(json.dumps(dict(lines=LINES)), encoding='utf-8')
+(d / 'k.json').write_text(json.dumps({l['id']: {k: v for k, v in l.items() if k != 'id'} for l in LINES}), encoding='utf-8')
+with open(d / 'l.csv', 'w', newline='', encoding='utf-8') as f:
     w = csv.DictWriter(f, ['id', 'group', 'speaker', 'text', 'emotion']); w.writeheader(); w.writerows(LINES)
 for name in ('l.toml', 'l.json', 'k.json', 'l.csv'):
     fl = projects.FileLines(d / name); got = fl.lines()
@@ -390,19 +391,19 @@ for name in ('l.toml', 'l.json', 'k.json', 'l.csv'):
     check(f'...and takes word edits back ({name})', next(x for x in fl.lines() if x['id'] == 'b_1')['text'] == 'New words, "quoted".'
           and next(x for x in fl.lines() if x['id'] == 'a_1')['text'] == 'First words.')
     check(f'...refusing a line it doesn\'t have ({name})', raises(lambda: fl.set_words(['nope'], 'x')))
-check('a TOML lines file keeps its comments through an edit', (d / 'l.toml').read_text().startswith('# kept comment'))
+check('a TOML lines file keeps its comments through an edit', (d / 'l.toml').read_text(encoding='utf-8').startswith('# kept comment'))
 
 pj = Project = projects.Project(PROJECT)
-check(f'the project is found from $VERBALINE_PROJECT ({projects.find()})', projects.find() == PROJECT)
+check(f'the project is found from $VERBALINE_PROJECT ({projects.find()})', projects.find() == PROJECT.resolve())   # Windows: temp is a short 8.3 name (RUNNER~1)
 check(f'its work folder is $VERBALINE_WORK ({pj.work_dir()})', pj.work_dir() == WORK)
 check('its config layers over the defaults', pj.cfg['apply']['copy_to'] == 'game/vo' and pj.cfg['tts']['takes'] == 8 and pj.name == 'Test')
-bad = Path(TMP.name) / 'bad'; bad.mkdir(); (bad / 'verbaline.toml').write_text('[lines]\nfile = "l.toml"\n')
+bad = Path(TMP.name) / 'bad'; bad.mkdir(); (bad / 'verbaline.toml').write_text('[lines]\nfile = "l.toml"\n', encoding='utf-8')
 for i, (txt, why) in enumerate((('id = "has space"\nspeaker = "x"\ntext = "y"', 'an id with a space'),
                                ('id = "a"\nspeaker = "x"\ntext = ""', 'a line with no words'),
                                ('id = "a"\nspeaker = "x"\ntext = "y"\n[[line]]\nid = "a"\nspeaker = "x"\ntext = "z"', 'an id used twice'))):
-    (bad / 'l.toml').write_text('[[line]]\n' + txt + '\n')
+    (bad / 'l.toml').write_text('[[line]]\n' + txt + '\n', encoding='utf-8')
     check(f'lines are refused with {why}', raises(lambda: projects.Project(bad).lines(None)))
-(bad / 'verbaline.toml').write_text('[project]\nname = "x"\n')
+(bad / 'verbaline.toml').write_text('[project]\nname = "x"\n', encoding='utf-8')
 check('a project with neither a lines file nor an adapter is refused', raises(lambda: projects.Project(bad)))
 
 # The whole loop on the throwaway project: lines, a pick, Apply (copy_to), the manifest, and what the page says.
@@ -424,7 +425,7 @@ check('...of a line there is', raises(lambda: hp.post('/api/pick', dict(key='no.
 hp.post('/api/pick', dict(key='intro_alarm', take='takes/intro_alarm/qwen_1.wav'))
 check('...and a real one is saved', c.json('picks.json', {})['intro_alarm']['take'] == 'takes/intro_alarm/qwen_1.wav')
 vo.cmd_apply(c, A2())
-m = json.loads((PROJECT / 'game/vo/manifest.json').read_text())
+m = json.loads((PROJECT / 'game/vo/manifest.json').read_text(encoding='utf-8'))
 e = m['lines'].get('intro_alarm', {})
 check(f'Apply copies the mastered pick and manifest.json into copy_to ({sorted(x.name for x in (PROJECT / "game/vo").iterdir())})',
       (PROJECT / 'game/vo/intro_alarm.wav').exists() and e.get('file') == 'intro_alarm.wav')
@@ -432,11 +433,11 @@ check(f'...the manifest says the words, speaker, group, voice, take and length (
       and e.get('voice') == 'lead' and e.get('take') == 'takes/intro_alarm/qwen_1.wav' and 1.0 < e.get('seconds', 0) < 1.6 and m['project'] == 'Test')
 S1 = vo_audition.state(c, lambda: None)
 check('after Apply the page has nothing pending', not S1[0]['pending'] and not S1[0]['pick_pending'])
-(PROJECT / 'verbaline.toml').write_text((PROJECT / 'verbaline.toml').read_text() + 'words_from_manifest = true\n'); c.reload()
-(PROJECT / 'lines.toml').write_text((PROJECT / 'lines.toml').read_text().replace('battle stations!', 'action stations!'))
+(PROJECT / 'verbaline.toml').write_text((PROJECT / 'verbaline.toml').read_text(encoding='utf-8') + 'words_from_manifest = true\n', encoding='utf-8'); c.reload()
+(PROJECT / 'lines.toml').write_text((PROJECT / 'lines.toml').read_text(encoding='utf-8').replace('battle stations!', 'action stations!'), encoding='utf-8')
 vo.cmd_lines(c, A2())
 check('with words_from_manifest, a line whose words changed since Apply is "not in the game yet"', vo_audition.state(c, lambda: None)[0]['pending'])
-c.project.cfg['apply'] = dict(label='x', command=['{python}', '-c', 'import sys, json; json.load(open(sys.argv[1])); print("imported", sys.argv[2])', '{manifest}', '{language}'])
+c.project.cfg['apply'] = dict(label='x', command=['{python}', '-c', 'import sys, json; json.load(open(sys.argv[1], encoding="utf-8")); print("imported", sys.argv[2])', '{manifest}', '{language}'])
 check('Apply runs [apply] command with its placeholders filled', not raises(lambda: vo.cmd_apply(c, A2())))
 c.project.cfg['apply'] = dict(label='x', command=['{python}', '-c', 'raise SystemExit(3)'])
 check('...and stops when the command fails', raises(lambda: vo.cmd_apply(c, A2())))
@@ -459,7 +460,7 @@ check(f'the adapter example: its lines, voices and scenes ({len(ra)} lines, {[g[
 check('the page gets a line\'s kind and context', next(x for x in vo_audition.state(ca, lambda: None) if x['key'] == 'dock_01')['context'] == 'Scene 1: The dock')
 check('...a mood the script names is the line\'s emotion', next(r for r in ra if r['id'] == 'dock_04')['emotion'] == 'whisper')
 ca.project.set_words(ca, ['dock_02'], 'One to the island, please.', ra)
-check('...word edits go back into its scene file', 'One to the island, please.' in (ex / 'game/scenes.json').read_text())
+check('...word edits go back into its scene file', 'One to the island, please.' in (ex / 'game/scenes.json').read_text(encoding='utf-8'))
 T = ca.project.timeline(ca, 'dock', {'pace': '2'})
 check(f'...its timeline: lines in order with their moments, events, an end ({len(T["lines"])} lines, {len(T["events"])} events)',
       [l['id'] for l in T['lines']] == ['dock_01', 'dock_02', 'dock_03', 'dock_04'] and T['end']['t'] > T['lines'][-1]['start']
@@ -476,8 +477,27 @@ check(f'...and a voiced line lasts its take on the timeline ({T2["lines"][0]["en
       not T2['lines'][0]['est'] and abs(T2['lines'][0]['end'] - T2['lines'][0]['start'] - 2.0) < .2)
 
 # The page: no game's names left in it, and the title is the project's.
-page = (REPO / 'verbaline/page.html').read_text()
+page = (REPO / 'verbaline/page.html').read_text(encoding='utf-8')
 check('the page\'s title is the project\'s', '<title>{{PROJECT}}: Verbaline For Games</title>' in page)
+
+# Windows: text defaults to the code page there (cp1252), which can't read the page or the words. Every text file
+# and pipe the studio opens names its encoding, and paths the page sees use forward slashes.
+import ast
+def implicit_text(path):
+    out = []
+    for n in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
+        if not isinstance(n, ast.Call) or any(k.arg == 'encoding' for k in n.keywords): continue
+        f = n.func; name = f.attr if isinstance(f, ast.Attribute) else getattr(f, 'id', '')
+        mode = n.args[1].value if name == 'open' and len(n.args) > 1 and isinstance(n.args[1], ast.Constant) else ''
+        text_pipe = name in ('Popen', 'run') and any(k.arg == 'text' for k in n.keywords)
+        if (name in ('read_text', 'write_text') or (name == 'open' and isinstance(f, ast.Name) and 'b' not in mode)
+                or (name == 'TemporaryFile' and n.args and 'b' not in n.args[0].value) or text_pipe):
+            out.append(f'{path.name}:{n.lineno}')
+    return out
+loose = [x for f in [*(REPO / 'verbaline').rglob('*.py'), *(REPO / 'examples').rglob('*.py')] for x in implicit_text(f)]
+check(f'every text file and pipe names its encoding (Windows) {loose}', not loose)
+check('paths the page sees use forward slashes', 'relative_to(root).as_posix()' in (REPO / 'verbaline/server.py').read_text(encoding='utf-8')
+      and '.relative_to(self.work.resolve()).as_posix()' in (REPO / 'verbaline/cli.py').read_text(encoding='utf-8'))
 
 print(f'verbaline checks: {failures} failed')
 TMP.cleanup()

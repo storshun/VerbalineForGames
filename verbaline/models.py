@@ -188,8 +188,9 @@ class XAI:
     def __init__(self, ctx):
         self.key = os.environ.get('XAI_API_KEY', '')
         if not self.key:
-            sys.exit('xAI: no API key. Put XAI_API_KEY=... in ~/.config/verbaline/env (then '
-                     'restart the studio service), or export it in your shell.')
+            sys.exit('xAI: no API key. ' + ('Set XAI_API_KEY as a user environment variable (setx XAI_API_KEY ...), then '
+                     'start the studio from a new terminal.' if os.name == 'nt' else 'Put XAI_API_KEY=... in '
+                     '~/.config/verbaline/env (then restart the studio service), or export it in your shell.'))
     def __enter__(self): return self
     def __exit__(self, *_): pass
     def say(self, text, ref, ref_text, emotion, voice, out, seed=1):
@@ -260,9 +261,9 @@ class SeedVC:
                      steps=self.steps, **({k: m[k] for k in ('checkpoint', 'config')} if m else {}))
                 for s, t, o, cfg, st, f0, m in todo]
         names = {str(o): Path(s).name for s, _, o, *_ in todo}; made = []
-        with tempfile.TemporaryFile('w+') as err:
+        with tempfile.TemporaryFile('w+', encoding='utf-8') as err:
             p = subprocess.Popen([self.python, str(self.RUNNER), str(self.repo)], stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE, stderr=err, text=True)
+                                 stdout=subprocess.PIPE, stderr=err, text=True, encoding='utf-8', errors='replace')
             p.stdin.write(json.dumps(jobs)); p.stdin.close()
             for line in p.stdout:
                 if line.startswith('ok '):
@@ -312,7 +313,8 @@ class StepEditX:
         import collections
         made, tail = [], collections.deque(maxlen=30)
         # Its log and the GPU slot's "waiting for 14000 MiB" come on one stream, so a wait shows on the page.
-        p = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        p = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                             encoding='utf-8', errors='replace')
         p.stdin.write(json.dumps([dict(j, out=str(j['out']), audio=str(j['audio'])) for j in jobs])); p.stdin.close()
         for line in p.stdout:
             if line.startswith('ok '): made.append(line[3:].strip()); print(f'  edited {len(made)} of {len(jobs)}', flush=True)
@@ -367,8 +369,11 @@ class Scorer:
         from speechbrain.inference.speaker import EncoderClassifier
         from torchaudio.pipelines import SQUIM_OBJECTIVE
         self.asr = WhisperModel(self.whisper_model, device='cuda', compute_type='float16')
+        copy = {}
+        if os.name == 'nt':          # it links its files into savedir by default, which Windows refuses without Developer Mode
+            from speechbrain.utils.fetching import LocalStrategy; copy = dict(local_strategy=LocalStrategy.COPY)
         self.spk = EncoderClassifier.from_hparams('speechbrain/spkrec-ecapa-voxceleb', run_opts={'device': 'cuda:0'},
-                                                  savedir=str(Path.home() / '.cache' / 'verbaline' / 'ecapa'))
+                                                  savedir=str(Path.home() / '.cache' / 'verbaline' / 'ecapa'), **copy)
         self.squim = SQUIM_OBJECTIVE.get_model().cuda().eval(); self.torch = torch
         return self
     def __exit__(self, *_): del self.asr, self.spk, self.squim; free_gpu()

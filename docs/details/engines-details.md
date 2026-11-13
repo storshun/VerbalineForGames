@@ -20,7 +20,8 @@ the batch runners in `verbaline/runners/`.
 - **xAI**: one of its voices (`xai_voice`: ara, aurora, carina, celeste, eve, iris, liora, luna, ursa, or its male
   voices) at `xai_speed` (0.7-1.5). Direction goes in the line's `say` as xAI tags (`[pause]`, `<loud>...</loud>`);
   whisper and shouting lines get tags added. For the service, put `XAI_API_KEY=...` in its env file
-  (`~/.config/verbaline/env` by default) and restart it.
+  (`~/.config/verbaline/env` by default) and restart it. On Windows, `setx XAI_API_KEY <key>` and start the studio
+  from a new terminal.
 - **Chatterbox** was removed: its output fell short. A voice or line naming it is made with the default engine; its
   old takes stay pickable.
 
