@@ -499,6 +499,75 @@ T2 = ca.project.timeline(ca, 'dock', {})
 check(f'...and a voiced line lasts its take on the timeline ({T2["lines"][0]["end"] - T2["lines"][0]["start"]:.2f} s)',
       not T2['lines'][0]['est'] and abs(T2['lines'][0]['end'] - T2['lines'][0]['start'] - 2.0) < .2)
 
+# ------------------------------------------------------------------ 🧹 clearing a group's unpicked takes, and take numbers
+import time                                                                            # noqa: E402
+os.environ['VERBALINE_WORK'] = str(WORK); cx = vo.Ctx(PROJECT); T = WORK / 'takes' / 'intro_alarm'   # the throwaway project again (hp's)
+if T.exists(): shutil.rmtree(T)
+for n in ('qwen_1', 'qwen_2', 'qwen_3', 'qwen_4', 'restyle_1'): speech(T / f'{n}.wav', .4)
+speech(T / 'parts' / 'neutral_0a1b2c3d' / 'qwen_1.wav', .4); speech(T / 'removed' / 'qwen_4.wav', .4); speech(T / 'removed' / 'qwen_7.wav', .4)
+(T / 'scores.json').write_text(json.dumps({f'{n}.wav': dict(total=.9) for n in ('qwen_1', 'qwen_2', 'qwen_3', 'qwen_4', 'restyle_1')}), encoding='utf-8')
+check('a new take\'s number is past every take, removed ones too (a gap or a clear never reuses a name, or overwrites the pick)',
+      vo_files.next_take_number(T, 'qwen') == 8 and vo_files.next_take_number(T, 'restyle') == 2 and vo_files.next_take_number(T, 'xai') == 1)
+cx.save_json('picks.json', {'intro_alarm': dict(take='takes/intro_alarm/qwen_1.wav')})
+cx.save_json('tweaks.json', {'intro_alarm': {'takes/intro_alarm/qwen_3.wav': dict(prompt='warmer')}})
+CT = lambda **k: argparse.Namespace(**dict(dict(voice=None, group='intro', line=None, keys=None, todo=False, unpicked_lines=False, dry_run=False, before=None), **k))
+plan = hp.post('/api/takes/clear', dict(group='intro', dry=1))['plan']
+check(f'🧹 the page is told what a clear would move first ({plan})',
+      plan == dict(lines=1, picked=1, takes=3, prompted=1, unpicked=0, unpicked_takes=0))
+check('...a group with no lines is refused', raises(lambda: hp.post('/api/takes/clear', dict(group='nowhere', dry=1))))
+before = sorted(x.name for x in T.glob('*.wav'))
+vo.cmd_clear_takes(cx, CT(dry_run=True))
+check('...a dry run moves nothing', sorted(x.name for x in T.glob('*.wav')) == before)
+jid = hp.post('/api/takes/clear', dict(group='intro'))['job']
+st = hp.jobs.added[-1][1][0]
+check(f'...the clear itself is a job, saying when you confirmed ({st})', st[:3] == ['clear-takes', '--group', 'intro'] and st[3] == '--before' and abs(float(st[4]) - time.time()) < 60 and jid)
+mk = {f'{n}.wav': dict(text='x', at='then') for n in ('qwen_1', 'qwen_2', 'qwen_3', 'qwen_4', 'restyle_1')}
+(T / 'made.json').write_text(json.dumps(mk), encoding='utf-8')
+newer = T / 'qwen_9.wav'; speech(newer, .4); os.utime(newer, (time.time() + 600, time.time() + 600))
+real_still = vo_files.remove_takes
+def racing(work, key, names, still=None):
+    seen = {'n': 0}
+    def still2():
+        seen['n'] += 1; s = still()
+        return s | ({'takes/intro_alarm/qwen_4.wav'} if seen['n'] >= 3 else set())
+    return real_still(work, key, names, still2)
+vo_files.remove_takes = racing
+vo.cmd_clear_takes(cx, CT(before=time.time())); vo_files.remove_takes = real_still
+left = sorted(x.name for x in T.glob('*.wav')); gone = sorted(x.name for x in (T / 'removed').glob('*.wav'))
+check(f'...a take picked while the job runs stays (or comes back) ({left})', 'qwen_4.wav' in left)
+check(f'...takes made after you confirmed (by jobs queued ahead) stay', 'qwen_9.wav' in left)
+check('...the moved takes\' records go with them (removed/made.json)', set(json.loads((T / 'removed' / 'made.json').read_text(encoding='utf-8'))) >= {'qwen_2.wav', 'restyle_1.wav'}
+      and set(json.loads((T / 'made.json').read_text(encoding='utf-8'))) == {'qwen_1.wav', 'qwen_3.wav', 'qwen_4.wav'})
+newer.unlink(); vo.cmd_clear_takes(cx, CT())
+left = sorted(x.name for x in T.glob('*.wav')); gone = sorted(x.name for x in (T / 'removed').glob('*.wav'))
+check(f'...the pick and a take with a prompt stay; the rest go to removed/ ({left})', left == ['qwen_1.wav', 'qwen_3.wav'])
+check(f'...a take whose name is already in removed/ keeps both ({gone})', 'qwen_4.wav' in gone and any(x.startswith('qwen_4_') for x in gone)
+      and {'qwen_2.wav', 'restyle_1.wav', 'qwen_7.wav'} <= set(gone))
+check('...parts tries aren\'t touched', (T / 'parts' / 'neutral_0a1b2c3d' / 'qwen_1.wav').exists())
+check('...moved takes\' checks are forgotten (a restored take is checked again)',
+      sorted(json.loads((T / 'scores.json').read_text(encoding='utf-8'))) == ['qwen_1.wav', 'qwen_3.wav'])
+check('...and the next take still doesn\'t reuse a name', vo_files.next_take_number(T, 'qwen') == 8)
+cx.save_json('picks.json', {}); vo.cmd_clear_takes(cx, CT())
+check('...a line with no pick keeps its takes', sorted(x.name for x in T.glob('*.wav')) == ['qwen_1.wav', 'qwen_3.wav'])
+vo.cmd_clear_takes(cx, CT(unpicked_lines=True))
+check('...unless asked: then all but the prompted one go', sorted(x.name for x in T.glob('*.wav')) == ['qwen_3.wav'])
+check('...and it needs lines named', raises(lambda: vo.cmd_clear_takes(cx, CT(group=None))))
+
+# The jobs sidebar: numbered output, fetched from where the page left off, and history that can be cleared.
+JB = vo_audition.Jobs(str(PROJECT)); time.sleep(.01)
+check('each start of the studio has its own output gen (a page open across a restart starts over)', vo_audition.Jobs(str(PROJECT)).gen != JB.gen)
+for i in range(3): JB.note(f'old {i}')
+JB.recent.appendleft(dict(id=1, label='old job', ok=True, secs=1))
+JB.current = dict(id=2, label='running', steps=[['x']], started=0, log_from=JB.seq + 1)
+JB.note('running 1'); s0 = JB.state(since=0); s2 = JB.state(since=2)
+check(f'job output is numbered, and the page fetches only what\'s new ({[x[1][9:] for x in s2["out"]]})',
+      [x[1][9:] for x in s0['out']] == ['old 0', 'old 1', 'old 2', 'running 1'] and [x[1][9:] for x in s2['out']] == ['old 2', 'running 1'])
+g0 = JB.gen; JB.clear(); s = JB.state(since=0)
+check(f'Clear history forgets finished jobs and their output, keeping the running job\'s ({[x[1][9:] for x in s["out"]]})',
+      not s['recent'] and [x[1][9:] for x in s['out']] == ['running 1'] and s['gen'] == g0 + 1 and s['current']['id'] == 2)
+JB.current = None; JB.clear(); JB.note('next')
+check('...and numbering carries on after a clear (a page that missed it starts over by gen)', JB.state(since=0)['out'][-1][0] == s0['out'][-1][0] + 1)
+
 # ------------------------------------------------------------------ Windows (the Windows test run checks these there)
 import subprocess, threading, time                                                   # noqa: E402
 from verbaline import tomledit                                                       # noqa: E402

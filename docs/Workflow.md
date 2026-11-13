@@ -29,7 +29,8 @@ How a line goes from words to a picked take. The studio's ideas:
 5. Apply.
 
 A session is mostly listening. Jobs queue and run one at a time in the background, so the director keeps picking
-while the next takes are made.
+while the next takes are made. When a group is done, its unpicked takes can be cleared away (recoverably), and the
+jobs' history cleared for the next wave.
 
 ## Where the details are
 

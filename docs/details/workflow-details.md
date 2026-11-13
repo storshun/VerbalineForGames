@@ -32,6 +32,7 @@ lines file / adapter ──> verbaline lines ──> lines.csv
 | `score [--voice V]` | check every new take |
 | `refcheck` | fix reference transcripts that don't match their audio |
 | `tweaks [--voice V]` | the prompts written on takes |
+| `clear-takes (--group G \| --line ID \| --keys K,...) [--unpicked-lines] [--dry-run]` | move takes no pick uses (and with no prompt) to `takes/<line>/removed/`; lines with no pick only with `--unpicked-lines` |
 | `promote TAKE --voice V --emotion E` | any clip becomes a reference |
 | `master [--lang L]` | master the picks into `export/<lang>/` |
 | `apply [--no-test]` | master, write the manifest, hand over (docs/details/project-api-details.md) |

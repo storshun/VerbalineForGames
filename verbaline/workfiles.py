@@ -13,6 +13,13 @@ A voice's references, <work_dir>/voices/<voice>/ref/:
   <emotion>.wav / .txt      the clip local engines clone for that emotion, and what it says
   <emotion>.json            {from: where it came from} (clip_source; older references are found by their audio)
 
+A line's takes, <work_dir>/takes/<line key>/:
+  <engine>_N.wav            text-to-speech takes; also you/vc_*, mirror_N, restyle_N, beat_N and parts_N (joined parts)
+  made.json / scores.json   how each take was made, and its checks, by file name
+  parts/                    the tries of each part of a line in parts
+  removed/                  takes taken away (recoverable), with made.json for them; numbered takes never reuse a removed
+                            one's name, and a conversion (vc_*) is remade under its name only when what it's made from changed
+
 Your performances, <work_dir>/performances/:
   <line key>_pN.wav / .txt  a recording of a line, and the words it was recorded with
   removed/                  deleted recordings (recoverable)
@@ -129,6 +136,64 @@ def seedvc_model(work, voice, f0):
     d = Path(work) / 'voices' / voice / 'seedvc' / ('pitch' if f0 else 'clone')
     if not ((d / 'model.pth').exists() and (d / 'model.json').exists()): return None
     return dict(json.loads((d / 'model.json').read_text(encoding='utf-8')), checkpoint=str(d / 'model.pth'), config=str(d / 'config.yml'))
+
+
+def next_take_number(folder, prefix):
+    """The number for a line's next <prefix>_N.wav: one past the highest in the folder or its removed/, so a new take
+    never reuses a name (a take's checks and history are kept by name, and a gap must not overwrite the pick)."""
+    folder = Path(folder); rx = re.compile(re.escape(prefix) + r'_(\d+)')
+    ns = [int(m[1]) for x in [*folder.glob(f'{prefix}_*.wav'), *folder.glob(f'removed/{prefix}_*.wav')] if (m := rx.fullmatch(x.stem))]
+    return 1 + max(ns + [0])
+
+
+def clear_plan(work, key, pick, prompted, unpicked=False, before=None):
+    """Which of a line's takes clearing its unpicked takes moves: (to move, kept), file names of takes/<key>/*.wav.
+    The pick stays, and so do takes with a prompt (prompted: their work paths). A line with no pick keeps every take
+    unless `unpicked`. Parts tries (parts/) aren't takes and stay, and so do takes made after `before` (a time: jobs
+    queued ahead of the clear make takes nobody has heard yet)."""
+    folder = Path(work) / 'takes' / key
+    names = sorted(x.name for x in folder.glob('*.wav') if before is None or x.stat().st_mtime <= before) if folder.is_dir() else []
+    if not pick and not unpicked: return [], names
+    keep = {n for n in names if f'takes/{key}/{n}' == pick or f'takes/{key}/{n}' in prompted}
+    return [n for n in names if n not in keep], sorted(keep)
+
+
+def removed_made(folder):
+    """How the takes in a line's removed/ were made (made.json entries moved with them), by file name."""
+    p = Path(folder) / 'removed' / 'made.json'
+    return json.loads(p.read_text(encoding='utf-8')) if p.exists() else {}
+
+
+def remove_takes(work, key, names, still=None):
+    """Moves takes into takes/<key>/removed/ (recoverable), with their made.json records (removed/made.json), and
+    forgets their checks (a restored take is checked again). `still()`, read before each move, gives work paths that
+    must stay (the pick, prompted takes: the page may pick meanwhile); a pick that moved anyway is moved back."""
+    folder = Path(work) / 'takes' / key; gone = folder / 'removed'; moved = {}
+    if names: gone.mkdir(exist_ok=True)
+    for n in names:
+        src = folder / n
+        if not src.exists() or (still and f'takes/{key}/{n}' in still()): continue
+        dst = gone / n
+        if dst.exists(): dst = gone / f'{src.stem}_{time.strftime("%Y%m%d-%H%M%S")}{src.suffix}'
+        replace(src, dst); moved[n] = dst
+    for n, dst in list(moved.items()) if still else []:
+        if f'takes/{key}/{n}' in still(): replace(dst, folder / n); del moved[n]   # picked in the last instant: back it goes
+    mf = folder / 'made.json'
+    if moved and mf.exists():
+        m = json.loads(mf.read_text(encoding='utf-8')); old = removed_made(folder)
+        if any(n in m for n in moved):
+            old.update({moved[n].name: m[n] for n in moved if n in m})
+            tmp = gone / 'made.json.tmp'; tmp.write_text(json.dumps(old, indent=1), encoding='utf-8'); replace(tmp, gone / 'made.json')
+            tmp = folder / 'made.json.tmp'; tmp.write_text(json.dumps({k: v for k, v in m.items() if k not in moved}, indent=1), encoding='utf-8')
+            replace(tmp, mf)
+    moved = list(moved)
+    sc = folder / 'scores.json'
+    if moved and sc.exists():
+        s = json.loads(sc.read_text(encoding='utf-8'))
+        if any(n in s for n in moved):
+            tmp = sc.with_name('scores.json.tmp'); tmp.write_text(json.dumps({k: v for k, v in s.items() if k not in moved}, indent=1), encoding='utf-8')
+            replace(tmp, sc)
+    return moved
 
 
 def next_performance(folder, key):

@@ -39,7 +39,8 @@ work folder, and checks: the emotion and engine tables agree; restyle presets ar
 job kind's steps and refusals; reference fallback; take order and checks; register shifts and restyle keeping; parts
 markup, part ids, joining (gaps, levels, room tone, resampling) and generation with a stand-in engine; lines files in
 TOML, JSON and CSV with edits written back; config layering; line validation; Apply with `copy_to` and `command`; the
-manifest; word tracking; the adapter example's hooks and timeline; every text file and pipe naming its encoding;
+manifest; word tracking; the adapter example's hooks and timeline; clearing unpicked takes (picks, prompts and
+parts kept, names never reused) and the jobs' numbered output and history; every text file and pipe naming its encoding;
 Windows' file rules (reserved and case-only ids, code-page and Excel files, replacing a file someone holds open, an
 exclusive port, a job in a model environment passing on its exit code, Cancel stopping a job's children). Add a
 check with every behavior change.

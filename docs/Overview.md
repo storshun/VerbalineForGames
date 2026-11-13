@@ -25,7 +25,7 @@ the broken ones, and leaves the choice to the director.
 3. On the Cast tab they design each character's voice from a description and choose its reference clips: a neutral
    one, then one per emotion as they find them.
 4. On the Lines tab they direct lines, generate takes or record their own reads, listen, and pick. Jobs queue in the
-   corner and run one at a time; the page updates as they finish.
+   sidebar and run one at a time; the page updates as they finish.
 5. With a timeline, they check a scene in context: when each line lands, what's around it, and the scene played back.
 6. They press Apply. The game has the picks.
 

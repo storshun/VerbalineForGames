@@ -778,6 +778,10 @@ def cmd_convert(c, a):
                 # Up to date: newer than its performance, reference and model, and made at the line's pitch shift.
                 if (dst.exists() and dst.stat().st_mtime > max(p.stat().st_mtime, newest)
                         and made.get(dst.name, {}).get('shift') == st): continue
+                # Cleared away (🧹 or ✕): not remade unless its recording, reference, model or shift changed since.
+                gone = out / 'removed' / dst.name
+                if (not dst.exists() and gone.exists() and gone.stat().st_mtime > max(p.stat().st_mtime, newest)
+                        and workfiles.removed_made(out).get(dst.name, {}).get('shift') == st): continue
                 # A picked take is never remade under its name (a new reference, shift or retrain would): the pick
                 # would change sound without anyone hearing it.
                 if dst.exists() and f'takes/{r["key"]}/{dst.name}' in picked: print(f'  {dst.name}: picked, kept as it is'); continue
@@ -877,7 +881,7 @@ def train_model(c, a, seed, v, kind, data, clips, mins):
 
 
 def cmd_tts(c, a):
-    regen = set(c.json('regen.json', []))
+    regen = set(c.json('regen.json', [])); picks = c.json('picks.json', {})
     rows = keys_of(c, a)
     if a.regen: rows = [r for r in rows if r['key'] in regen]
     # Lines you've acted are voiced from your performance; text-to-speech fills the rest (or adds to them with --all).
@@ -909,9 +913,9 @@ def cmd_tts(c, a):
             if needs_ref and not ref: print(f'{r["key"]}: {r["voice"]} has no reference voice yet (design + choose)'); continue
             out = c.path('takes', r['key']); out.mkdir(parents=True, exist_ok=True)
             have = len(list(out.glob(f'{backend}_*.wav')))
-            want = n if (a.regen or a.more or have == 0) else 0
-            t0 = time.time()
-            for k in range(have + 1, have + want + 1):
+            want = n if (a.regen or a.more or (have == 0 and r['key'] not in picks)) else 0   # a picked line has what it needs
+            t0 = time.time(); k0 = workfiles.next_take_number(out, backend)
+            for k in range(k0, k0 + want):
                 tts.say(r['say'], ref, ref_text, r['emotion'], c.voice_cfg(r['voice']), out / f'{backend}_{k}.wav', seed=k)
                 record_made(c, r['key'], f'{backend}_{k}.wav', r['text'], ref if needs_ref else None)
             if want: print(f'{r["key"]}: {want} takes ({backend}, {(time.time() - t0) / want:.1f} s each)')
@@ -1050,6 +1054,34 @@ def cmd_master(c, a):
         for t in targets: sf.write(t, x.astype('float32'), sr, subtype='PCM_24')
         done += len(targets)
     print(f'{done} files written to {out}.' + ('' if getattr(a, 'from_apply', False) else ' `verbaline apply` hands them to the project.'))
+
+
+def cmd_clear_takes(c, a):
+    """Moves the takes a group's (or the chosen lines') picks don't use into each line's removed/ folder."""
+    if not (a.group or a.line or a.keys): sys.exit('Say which lines: --group, --line or --keys.')
+    keys = list(dict.fromkeys(r['key'] for r in c.lines() if (not a.group or str(r.get('group', '')) == a.group)
+                              and (not a.line or a.line in (r['id'], r['key'])) and (not a.keys or r['key'] in a.keys.split(','))
+                              and (not a.voice or r['voice'] == a.voice)))
+    if not keys: sys.exit('No lines match.')
+    total = kept_lines = 0
+    for key in keys:
+        picks = c.json('picks.json', {}); tweaks = c.json('tweaks.json', {})      # read per line: the page may pick meanwhile
+        pick = picks.get(key, {}).get('take', '')
+        move, keep = workfiles.clear_plan(c.work, key, pick, set(tweaks.get(key, {})), a.unpicked_lines, a.before)
+        if not pick and not a.unpicked_lines:
+            if keep: kept_lines += 1
+            continue
+        if a.dry_run: moved = move
+        else:
+            def still(k=key):          # what must stay, read again before each move: a pick or prompt made meanwhile counts
+                p = c.json('picks.json', {}).get(k, {}).get('take', ''); return {p, *c.json('tweaks.json', {}).get(k, {})}
+            moved = workfiles.remove_takes(c.work, key, move, still)
+        if moved:
+            total += len(moved)
+            print(f'{key}: {len(moved)} take{"s" * (len(moved) != 1)} {"would go" if a.dry_run else "moved"} to removed/'
+                  + (f', kept {", ".join(Path(x).stem for x in keep)}' if keep else ''), flush=True)
+    left = f'; {kept_lines} line{"s" * (kept_lines != 1)} without a pick left alone' if kept_lines else ''
+    print(f'{total} take{"s" * (total != 1)} {"would move" if a.dry_run else "moved"} to takes/<line>/removed/ (recoverable){left}')
 
 
 def cmd_tweaks(c, a):
@@ -1229,6 +1261,10 @@ def main():
     s.add_argument('--regen', action='store_true'); s.add_argument('--all', action='store_true')
     s = add('serve', cmd_serve); s.add_argument('--port', type=int, help='default: verbaline.toml [project] port, else 8765')
     s = add('audition', cmd_serve); s.add_argument('--port', type=int, help=argparse.SUPPRESS)   # its old name
+    s = add('clear-takes', cmd_clear_takes, 'filters')
+    s.add_argument('--unpicked-lines', action='store_true', help='also lines with no pick yet (all their takes)')
+    s.add_argument('--dry-run', action='store_true', help='only say what would move')
+    s.add_argument('--before', type=float, help='only takes made before this time (seconds since 1970): the page passes when you confirmed')
     add('tweaks', cmd_tweaks).add_argument('--voice')
     s = add('refcheck', cmd_refcheck); s.add_argument('--voice'); s.add_argument('--emotion', choices=EMOTIONS)
     s.add_argument('--tolerance', type=float, default=0.05, help='share of letters off above which a transcript is rewritten')

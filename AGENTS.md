@@ -33,6 +33,8 @@ picks to the game. A project hooks up through a `verbaline.toml`; the studio its
   or docs/details/timeline-details.md in the same commit, with a check in tests/test_verbaline.py.
 - American English everywhere: code, page text, docs.
 - `python tests/test_verbaline.py` passes before every commit.
+- Every finished change is published as a release (version, CHANGELOG.md entry, tag, release files) in the same
+  session, after the Windows run passes. Nothing finished stays unpublished.
 
 ## Where everything else is
 
@@ -43,3 +45,4 @@ Additional information on directing and voicing a line (cast, references, takes,
 Additional information on the speech engines, their models and licenses can be found in docs/Engines.md. Read it before adding or changing an engine.
 Additional information on installing the studio and its configuration can be found in docs/Install.md.
 Additional information on the code's layout and how to test it can be found in docs/Development.md. Read it before changing the code.
+Additional information on releasing (numbering, the change log, the checks, the release files) can be found in docs/Releasing.md. Read it before publishing.

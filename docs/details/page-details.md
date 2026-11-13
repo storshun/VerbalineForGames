@@ -8,7 +8,8 @@ Tabs (Lines, Cast, Timeline), the Lines filters (voice, group, show, search), th
 and what the game doesn't have yet with the project's Apply button (its label and tooltip are `[apply] label` and
 `about`). Show: needs a pick, everything, picked, flagged for new takes, has prompts, words not in game yet, has
 old-word takes, picks in an older voice. **Generate takes for N lines needing a pick** makes more takes for every shown
-line without a pick, each on its own engine (asks first when any is a cloud engine).
+line without a pick, each on its own engine (asks first when any is a cloud engine). With a group chosen, **🧹 Clear unpicked
+takes** clears that group's takes no pick uses (below).
 
 ## Lines tab
 
@@ -57,9 +58,36 @@ docs/details/timeline-details.md. Esc stops ▶ from here or cancels a ✎ edit.
 
 ## Jobs
 
-Generation, conversion, scoring, training and Apply run as jobs, one at a time, in the order started. The corner panel
-shows the running job, the queue (each cancellable) and the log. The page reloads its data when a job finishes.
-Restarting the studio kills running jobs.
+Generation, conversion, scoring, training, clearing takes and Apply run as jobs, one at a time, in the order started.
+The page reloads its data when a job finishes. Restarting the studio kills running jobs and forgets their history.
+
+The jobs sidebar, on the right, shows the running job (**stop**), the queue (**remove** each), finished jobs (✓ done,
+✗ stopped or failed: the output says why) and the output.
+
+- **» hides it** to a thin rail on the right edge that still shows a running job and how many are waiting; click the
+  rail to open it again. Drag its left edge to make it wider. Open or hidden, and its width, are remembered in this
+  browser. Under 900 px wide it opens over the page instead of beside it.
+- **Links:** a line id or key in a job or its output opens that line on the Lines tab (the filters are cleared if
+  they hid it, and the page says so); a voice id opens the voice on the Cast tab. Ctrl+click opens it in a new tab.
+- **Clear history** forgets finished jobs and their output, once you're done with a wave of work. The running job,
+  its output so far and the queue stay. It's for every open page (the studio keeps one history).
+
+The output keeps the last 2,000 lines and the last 100 finished jobs.
+
+## 🧹 Clear unpicked takes
+
+With a group chosen in the Lines tab's group filter, **🧹 Clear unpicked takes** in the bar moves the takes no pick
+uses in that group to each line's `takes/<line key>/removed/` folder. It asks first, saying how many takes from how
+many lines, and runs as a job after any running one; the output names each line and the take it kept. What stays:
+
+- each line's pick (read again for each line as the job runs, so a pick made meanwhile counts);
+- takes with a prompt on them (✎: a near-miss you asked to have redone);
+- a line's parts tries (`parts/`, which ✂ joins draw on);
+- lines with no pick yet, unless you tick "Also the lines with no pick yet", which clears all their takes.
+
+Nothing is deleted: move a file back from `removed/` to bring it back (score it again with `verbaline score`). New
+takes never reuse a removed take's name. From a terminal: `verbaline clear-takes --group G [--unpicked-lines]
+[--dry-run]`.
 
 ## Links
 
@@ -71,7 +99,7 @@ Restarting the studio kills running jobs.
 The page talks to the server in JSON; the main routes, for tools and tests (`verbaline/server.py`):
 `GET /api/state` (every card), `GET /api/cast`, `GET /api/jobs`, `GET /api/timeline`, `GET /audio?p=<work path>`,
 `POST /api/pick {key, take}` (`take` a work-folder path, `takes/<key>/<name>.wav`, as `/api/state` lists it; empty or null clears the pick; anything else is refused), `POST /api/text {ids, text}`, `POST /api/job {kind, ...}` (kinds: tts, bulk, design, preview,
-retry, convert, restyle, mirror, beat, score, train, apply), `POST /api/job/cancel {id}`. `/api/state` is a list of cards, one per recording: `key`, `ids`, `group`, `speaker`, `voice`, `text`, `emotion`,
+retry, convert, restyle, mirror, beat, score, train, apply), `POST /api/job/cancel {id}`, `GET /api/jobs?since=<seq>&gen=<gen>` (output lines after `since` as `out: [[seq, text]]`; all of them when `gen` isn't the studio's: its history was cleared), `POST /api/jobs/clear`, `POST /api/takes/clear {group, unpicked, dry}` (`dry`: what would move, as `plan`; otherwise a job). `/api/state` is a list of cards, one per recording: `key`, `ids`, `group`, `speaker`, `voice`, `text`, `emotion`,
 `note`, `kind`, `context`, `takes` (each with `path`, `name`, `source`, checks), `pick` (a take's `path`), `pending`
 (its words differ from the game's), `game_text` (the game's words), `pick_pending` (the pick isn't applied yet),
 `parts`, and the directing fields. The server listens

@@ -221,6 +221,7 @@ the pick stands): a game can compare it to know a line's audio changed.
 | `performances/<line>_p<n>.wav` | the director's recordings |
 | `takes/<line key>/<source>_<n>.wav` | takes, with `made.json` (how each was made) and `scores.json` |
 | `takes/<line key>/parts/` | a line in parts: each part's tries and `mix.json` |
+| `takes/<line key>/removed/` | takes cleared away (🧹, `verbaline clear-takes`): move one back to restore it. A new take's number is always past every take here too, so names are never reused |
 | `picks.json`, `tweaks.json`, `regen.json` | picks, prompts on takes, lines flagged for new takes |
 | `export/<lang>/` | mastered picks and `manifest.json` |
 | `applied.json`, `logs/` | the last Apply, and each Apply step's log |

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.4 (2026-11-13)
+
+The jobs sidebar, and clearing old takes.
+
+- **The jobs sidebar**: the queue and output moved from the corner into a sidebar on the right. » hides it to a rail
+  that still shows what's running; drag its edge to resize; both are remembered.
+- **Links in jobs**: a line id in a job or its output opens that line on the Lines tab, a voice id opens the voice on
+  the Cast tab.
+- **Clear history**: forgets finished jobs and their output once a wave of work is done (the running job and the queue
+  stay). The output now keeps 2,000 lines and 100 finished jobs, and the page fetches only new lines.
+- **🧹 Clear unpicked takes** for a group: moves the takes no pick uses to each line's `removed/` folder
+  (recoverable), keeping picks, takes with prompts and parts tries; it asks first with the counts and runs as a job.
+  Lines with no pick stay unless asked. Also `verbaline clear-takes`.
+- **Take numbers are never reused**: a new take was numbered by counting the line's takes, so after any take was
+  taken away a new one could reuse an old name (and its checks), or overwrite another take. It now numbers past every
+  take, removed ones too.
+- **Releasing** is documented (docs/Releasing.md): every finished change goes out as a release, checked on Windows
+  first.
+
 ## 0.1.3 (2026-11-12)
 
 Windows, a closer look.

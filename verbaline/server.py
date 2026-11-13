@@ -52,7 +52,8 @@ class Jobs:
     """Runs studio commands (cli.py) one job at a time (each job is one or more steps), keeping their output for the page."""
     def __init__(self, root='.'):
         self.root = root; self.lock = threading.Lock(); self.queue = collections.deque(); self.current = None; self.proc = None
-        self.recent = collections.deque(maxlen=12); self.log = collections.deque(maxlen=300); self.ids = itertools.count(1)
+        self.recent = collections.deque(maxlen=100); self.log = collections.deque(maxlen=2000); self.ids = itertools.count(1)
+        self.seq = 0; self.gen = int(time.time() * 1000)   # output lines are numbered (seq); gen changes on a clear or a restart
         threading.Thread(target=self.loop, daemon=True).start()
 
     def add(self, label, steps):
@@ -70,13 +71,14 @@ class Jobs:
 
     def note(self, line):
         line = line.rstrip()
-        if line and not NOISE.search(line): self.log.append(time.strftime('%H:%M:%S ') + line[-400:])
+        if line and not NOISE.search(line):
+            with self.lock: self.seq += 1; self.log.append((self.seq, time.strftime('%H:%M:%S ') + line[-400:]))
 
     def loop(self):
         while True:
             with self.lock: j = self.queue.popleft() if self.queue else None
             if not j: time.sleep(.3); continue
-            self.current = j; j['started'] = time.time(); ok = True
+            self.current = j; j['started'] = time.time(); j['log_from'] = self.seq + 1; ok = True
             self.note(f'== {j["label"]}')
             env = dict(os.environ, PYTHONUNBUFFERED='1')
             for k, argv in enumerate(j['steps']):
@@ -95,14 +97,24 @@ class Jobs:
             self.note(f'== {"done" if ok else "stopped"}: {j["label"]} ({j["secs"]} s)')
             with self.lock: self.recent.appendleft(j); self.current = None; self.proc = None
 
-    def state(self):
+    def clear(self):
+        """Forgets finished jobs and their output; the running job's output and the queue stay."""
+        with self.lock:
+            self.recent.clear(); keep = self.current.get('log_from', self.seq + 1) if self.current else self.seq + 1
+            self.log = collections.deque((x for x in self.log if x[0] >= keep), maxlen=self.log.maxlen); self.gen += 1
+
+    def state(self, since=None):
+        """The running job, the queue, finished jobs (newest first) and output: `log` is the last 80 lines as text;
+        with `since` (a seq), `out` is every kept line after it as [seq, text], and `gen` says whether to start over."""
         with self.lock:
             cur = self.current
-            return dict(current=cur and dict(id=cur['id'], label=cur['label'], step=cur.get('step', 0),
-                                             steps=len(cur['steps']), secs=round(time.time() - cur['started'])),
-                        queued=[dict(id=j['id'], label=j['label']) for j in self.queue],
-                        recent=[dict(id=j['id'], label=j['label'], ok=j['ok'], secs=j['secs']) for j in self.recent],
-                        log=list(self.log)[-80:])
+            s = dict(current=cur and dict(id=cur['id'], label=cur['label'], step=cur.get('step', 0),
+                                          steps=len(cur['steps']), secs=round(time.time() - cur['started'])),
+                     queued=[dict(id=j['id'], label=j['label']) for j in self.queue],
+                     recent=[dict(id=j['id'], label=j['label'], ok=j['ok'], secs=j['secs']) for j in self.recent],
+                     log=[x[1] for x in list(self.log)[-80:]], gen=self.gen, seq=self.seq)
+            if since is not None: s['out'] = [list(x) for x in self.log if x[0] > since]
+            return s
 
 
 # ------------------------------------------------------------------ what the page shows
@@ -398,7 +410,11 @@ class Handler(BaseHTTPRequestHandler):
             if u.path == '/': return self.send(200, page(self.ctx), 'text/html; charset=utf-8')
             if u.path == '/api/state': return self.send(200, json.dumps(state(self.ctx, self.export)))
             if u.path == '/api/cast': return self.send(200, json.dumps(cast_state(self.ctx, self.export)))
-            if u.path == '/api/jobs': return self.send(200, json.dumps(self.jobs.state()))
+            if u.path == '/api/jobs':
+                q = urllib.parse.parse_qs(u.query); since = q.get('since', [''])[0]; gen = q.get('gen', [''])[0]
+                since = int(since) if since.isdigit() else None
+                if since is not None and gen != str(self.jobs.gen): since = 0   # cleared (or a restart) since that page last asked: all of it
+                return self.send(200, json.dumps(self.jobs.state(since)))
             if u.path == '/api/timeline':
                 # The project's timeline of one group (its adapter's timeline hook: docs/details/timeline-details.md).
                 q = urllib.parse.parse_qs(u.query); opts = {k[4:]: v[0] for k, v in q.items() if k.startswith('opt.')}
@@ -614,6 +630,25 @@ class Handler(BaseHTTPRequestHandler):
             return dict(take=c.rel(out), job=self.jobs.add(f'score {key} (the parts joined: {out.stem})', [['score', '--line', key]]))
         elif path == '/api/job':
             return dict(id=self.job(body))
+        elif path == '/api/jobs/clear':
+            self.jobs.clear()
+        elif path == '/api/takes/clear':
+            # 🧹 A group's takes its picks don't use, into each line's removed/ (recoverable). {group, unpicked, dry}:
+            # dry says what would move (the page asks first); otherwise it's a job, after any running one.
+            g = str(body.get('group', '')); unpicked = bool(body.get('unpicked'))
+            keys = list(dict.fromkeys(r['key'] for r in c.lines() if str(r.get('group', '')) == g))
+            if not g or not keys: raise ValueError('no lines in that group')
+            if body.get('dry'):
+                picks, tweaks = c.json('picks.json', {}), c.json('tweaks.json', {}); n = dict(lines=len(keys), picked=0, takes=0, prompted=0, unpicked=0, unpicked_takes=0)
+                for k in keys:
+                    pick = picks.get(k, {}).get('take', ''); prompted = set(tweaks.get(k, {}))
+                    move, keep = workfiles.clear_plan(c.work, k, pick, prompted, True)
+                    if pick: n['picked'] += 1; n['takes'] += len(move); n['prompted'] += sum(f'takes/{k}/{x}' in prompted for x in keep)
+                    else: n['unpicked'] += 1; n['unpicked_takes'] += len(move); n['prompted'] += sum(f'takes/{k}/{x}' in prompted for x in keep)
+                return dict(plan=n)
+            title = next((x.get('title') for x in c.json('groups.json', []) if str(x.get('id')) == g), '') or g
+            return dict(job=self.jobs.add(f'clear the takes no pick uses in {title}' + (' (and lines with no pick)' if unpicked else ''),
+                                          [['clear-takes', '--group', g, '--before', f'{time.time():.3f}', *(['--unpicked-lines'] if unpicked else [])]]))
         elif path == '/api/job/cancel':
             if not self.jobs.cancel(int(body['id'])): raise ValueError('no such job')
         else: raise ValueError('unknown request')

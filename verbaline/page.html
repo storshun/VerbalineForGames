@@ -151,11 +151,27 @@ textarea.vdesc:hover,textarea.vdesc:focus{border-color:var(--line);background:va
 .pend{font-size:12px;color:var(--warn)}#game{font-size:13px;display:flex;gap:8px;align-items:center}.wedit{display:flex;gap:8px;align-items:flex-start;margin:6px 0}.wedit textarea{flex:1;font-size:15px;min-height:60px;border-color:var(--acc)}
 .text .ew{font-size:12px;margin-left:8px;padding:1px 8px;vertical-align:middle}.err{color:var(--bad);font-size:13px}
 table.spk{border-collapse:collapse;width:100%}table.spk td{padding:3px 8px;border-top:1px solid var(--line)}
-#jobs{position:fixed;right:12px;bottom:12px;width:min(560px,calc(100vw - 24px));background:#12151bf2;border:1px solid var(--line);border-radius:10px;z-index:4;font-size:13px}
-#jobs .jh{padding:8px 12px;cursor:pointer;display:flex;gap:8px;align-items:center}#jobs .jb{padding:0 12px 10px;display:none}
-#jobs.open .jb{display:block}#jobs pre{margin:6px 0 0;max-height:240px;overflow:auto;background:#0b0d11;padding:6px 8px;border-radius:6px;font-size:11.5px;white-space:pre-wrap;color:#b8c0d0}
+/* the jobs sidebar: the running job, the queue, finished jobs and their output; collapses to a rail */
+:root{--jw:400px}
+#jobs{position:fixed;top:0;right:0;bottom:0;width:min(var(--jw),calc(100vw - 320px));background:#12151b;border-left:1px solid var(--line);z-index:5;font-size:13px;display:flex}
+#jobs .jpane{flex:1;min-width:0;display:flex;flex-direction:column;padding:8px 10px 10px}
+#jobs .jtop{display:flex;gap:8px;align-items:center;padding-bottom:6px;border-bottom:1px solid var(--line)}#jobs .jtop button{padding:2px 8px;font-size:12px}
+#jlist{max-height:42%;overflow:auto;display:grid;gap:5px;padding:8px 0;align-content:start}
+#jobs .jouth{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+#jlog{flex:1;min-height:80px;margin:4px 0 0;overflow:auto;background:#0b0d11;padding:6px 8px;border-radius:6px;font-size:11.5px;white-space:pre-wrap;overflow-wrap:anywhere;color:#b8c0d0}
+#jrail{display:none}.jgrip{width:6px;margin-left:-3px;cursor:col-resize;flex:none}.jgrip:hover{background:var(--line)}
+#jobs.shut{width:30px;cursor:pointer}#jobs.shut .jpane,#jobs.shut .jgrip{display:none}
+#jobs.shut #jrail{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0;width:30px;color:var(--dim)}#jobs.shut:hover #jrail{color:var(--fg)}
+#jrail .jv{writing-mode:vertical-rl;font-size:12.5px;letter-spacing:.04em}
+body.jopen{padding-right:min(var(--jw),calc(100vw - 320px))}body.jshut{padding-right:30px}
+@media (max-width:900px){body.jopen{padding-right:30px}#jobs:not(.shut){width:min(var(--jw),100vw);box-shadow:-8px 0 24px #0009}}
+a.jl{color:var(--acc);text-decoration:none;border-bottom:1px dotted #5cc8ff88}a.jl:hover{border-bottom:1px solid var(--acc)}a.jl.jv{color:var(--cloud);border-bottom-color:#c79bff88}
+.jq .jt{flex:1;min-width:0;overflow-wrap:anywhere}.jq.run{color:var(--fg)}.jq .ok{color:var(--ok)}.jq .bad{color:var(--bad)}.jsecs{white-space:nowrap;font-size:12px}
+.card.hl{background:#1f3326;transition:background 1.5s}
+#clr{max-width:1100px;margin:10px auto 0;padding:0 16px;position:sticky;top:var(--hh,58px);z-index:2}#clr:empty{display:none}#clr .cbox{border:1px solid #6b5326;background:#231d12;border-radius:8px;padding:10px 12px;display:grid;gap:8px;font-size:13.5px}
+#clr .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .spin{width:9px;height:9px;border-radius:50%;background:var(--acc);animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.25}}
-.jq{display:flex;gap:8px;align-items:center;color:var(--dim)}
+.jq{display:flex;gap:8px;align-items:baseline;color:var(--dim)}
 @media (max-width:700px){.take{grid-template-columns:20px 1fr auto auto}.take .src{display:none}.dir{grid-template-columns:1fr}.dir .wide{grid-column:1}.vgrid{grid-template-columns:1fr}}
 /* the Timeline tab: a group's lines on the player's clock, and what is happening around them */
 main#timeline{max-width:1180px}
@@ -199,8 +215,12 @@ main#timeline{max-width:1180px}
 <input id="q" placeholder="search text" size="14">
 <select id="mic" title="The microphone ● Record uses"><option value="">default mic</option></select></span>
 <span id="tf" hidden></span><span class="count" id="count"></span><span id="bulk"></span><span id="game"></span></header>
-<main id="lines"></main><main id="cast" hidden></main><main id="timeline" hidden></main>
-<div id="jobs"><div class="jh" onclick="this.parentNode.classList.toggle('open')"><span id="jdot"></span><span id="jsum">No jobs</span></div><div class="jb" id="jbody"></div></div>
+<div id="clr"></div><main id="lines"></main><main id="cast" hidden></main><main id="timeline" hidden></main>
+<aside id="jobs"><div id="jrail" onclick="setJobs(1)" title="Show the jobs and their output"></div><div class="jgrip" onmousedown="gripJobs(event)" title="Drag to make the sidebar wider or narrower"></div>
+<div class="jpane"><div class="jtop"><span id="jdot"></span><b>Jobs</b><span id="jsum" class="src"></span><span style="flex:1"></span>
+<button id="jclear" onclick="clearJobs()" title="Forget finished jobs and their output, once you're done with a wave of work (the running job and the queue stay)">Clear history</button>
+<button onclick="setJobs(0)" title="Hide the sidebar (its rail shows when jobs run)">»</button></div>
+<div id="jlist"></div><div class="jouth">Output</div><pre id="jlog"></pre></div></aside>
 <datalist id="xaiv"></datalist>
 <script>
 let S=[],C=null,J={},tab='lines',sel=0,editing=null,lastDone=null,CV=null,GEN={};const opened=new Set();   // CV: the cast member the Cast tab shows
@@ -226,7 +246,7 @@ function draw(){
  const a=document.activeElement,free=a&&['INPUT','TEXTAREA'].includes(a.tagName)&&!a.closest('[data-card]')&&(a.id||a.dataset.pron!==undefined)?{id:a.id,pron:a.dataset.pron,v:a.value,s:a.selectionStart,e:a.selectionEnd}:null,keepF=a&&(a.dataset.f||a.dataset.pf||['tw','wd','lf','cfs','cft','pe'].includes(a.id))?{card:a.closest('[data-card]')?.dataset.card,f:a.dataset.f||a.dataset.pf||a.id,v:a.value,s:a.selectionStart,e:a.selectionEnd}:null;
  $('tLines').classList.toggle('on',tab=='lines');$('tCast').classList.toggle('on',tab=='cast');$('tTime').classList.toggle('on',tab=='timeline');$('lf').hidden=tab!='lines';$('tf').hidden=tab!='timeline';
  $('lines').hidden=tab!='lines';$('cast').hidden=tab!='cast';$('timeline').hidden=tab!='timeline';
- if(tab=='lines')drawLines();else if(tab=='cast'){drawCast();$('bulk').innerHTML=''}else{drawTimeline();$('bulk').innerHTML=''}
+ if(tab=='lines')drawLines();else if(tab=='cast'){drawCast();$('bulk').innerHTML=''}else{drawTimeline();$('bulk').innerHTML=''}drawClear();
  if(keepF){const card=document.querySelector(`[data-card="${CSS.escape(keepF.card||'')}"]`);const el=card&&(['tw','wd','lf','cfs','cft','pe'].includes(keepF.f)?card.querySelector('#'+keepF.f):card.querySelector(`[data-f="${keepF.f}"],[data-pf="${keepF.f}"]`));
   if(el){el.value=keepF.v;el.focus();try{el.setSelectionRange(keepF.s,keepF.e)}catch(e){}}}
  if(free){const el=free.id?$(free.id):document.querySelector(`[data-pron="${CSS.escape(free.pron)}"]`);if(el){el.value=free.v;el.focus();try{el.setSelectionRange(free.s,free.e)}catch(e){}}}
@@ -326,8 +346,16 @@ function drawGame(){const n=S.filter(l=>l.pending).length,p=S.filter(l=>l.pick_p
  $('game').innerHTML=n||p?`<span class="pend">${what} not in the game yet</span><button class="go" onclick="job({kind:'apply'})" title="${esc(C.apply_about||'')}">${esc(C.apply_label)}</button>`
   :'<span class="src">game has these words and picks ✓</span>'}
 // Bulk: more takes for every shown line that still needs a pick (each on its own engine).
-function drawBulk(){const L=shown().filter(l=>!l.pick&&l.ready),cl=L.filter(l=>l.cloud).length;
- $('bulk').innerHTML=tab=='lines'&&L.length?`<select id="bn" title="Takes per line">${[2,4,8].map(n=>`<option ${n==4?'selected':''} value="${n}">${n}</option>`).join('')}</select><button class="${cl?'cl':'go'}" onclick="bulkGen()" title="Adds takes to each shown line without a pick, on each line's own engine${cl?` (${cl} on a cloud engine: paid)`:''}">Generate takes for ${L.length} line${L.length>1?'s':''} needing a pick</button>`:''}
+function drawBulk(){const L=shown().filter(l=>!l.pick&&l.ready),cl=L.filter(l=>l.cloud).length,g=$('group').value;drawClear();
+ $('bulk').innerHTML=(tab=='lines'&&g&&S.some(l=>String(l.group)==g&&l.takes.length)?`<button onclick="clearAsk()" title="Move the takes no pick uses in ${esc(groupTitle(g))} to each line's removed/ folder (recoverable). Asks first, with how many.">🧹 Clear unpicked takes</button> `:'')+(tab=='lines'&&L.length?`<select id="bn" title="Takes per line">${[2,4,8].map(n=>`<option ${n==4?'selected':''} value="${n}">${n}</option>`).join('')}</select><button class="${cl?'cl':'go'}" onclick="bulkGen()" title="Adds takes to each shown line without a pick, on each line's own engine${cl?` (${cl} on a cloud engine: paid)`:''}">Generate takes for ${L.length} line${L.length>1?'s':''} needing a pick</button>`:'')}
+let CLR=null;   // 🧹 clearing a group's unpicked takes: {group, plan, unpicked}, shown above the lines until done or cancelled
+async function clearAsk(){const g=$('group').value;if(!g)return;const r=await api('/api/takes/clear',{group:g,dry:1});CLR={group:g,plan:r.plan,unpicked:false};drawClear()}
+function drawClear(){const e=$('clr');if(!CLR||tab!='lines'||$('group').value!=CLR.group){CLR=null;e.innerHTML='';return}document.documentElement.style.setProperty('--hh',(document.querySelector('header').offsetHeight+6)+'px');const P=CLR.plan,n=P.takes+(CLR.unpicked?P.unpicked_takes:0),s=x=>x==1?'':'s';
+ e.innerHTML=`<div class="cbox"><div><b>🧹 Clear the takes no pick uses in ${esc(groupTitle(CLR.group))}?</b></div>
+  <div>${n} take${s(n)} from ${P.picked+(CLR.unpicked?P.unpicked:0)} line${s(P.picked+(CLR.unpicked?P.unpicked:0))} move to each line's <code>removed/</code> folder (recoverable: move a file back to bring it back). Each pick stays${P.prompted?`, and so do ${P.prompted} take${s(P.prompted)} with a prompt`:''}; parts tries aren't touched. It runs as a job after the jobs already running or queued; takes they make stay.</div>
+  ${P.unpicked?`<label class="row"><input type="checkbox" ${CLR.unpicked?'checked':''} onchange="CLR.unpicked=this.checked;drawClear()"> Also the ${P.unpicked} line${s(P.unpicked)} with no pick yet: all ${P.unpicked_takes} of their takes</label>`:''}
+  <div class="row"><button class="go" ${n?'':'disabled'} onclick="clearGo()">Clear ${n} take${s(n)}</button><button onclick="CLR=null;drawClear()">Cancel</button></div></div>`}
+async function clearGo(){const c=CLR;if(!c)return;CLR=null;drawClear();await api('/api/takes/clear',{group:c.group,unpicked:c.unpicked});note('Clearing takes in '+groupTitle(c.group)+' (a job)');pollJobs()}
 function bulkGen(){const L=shown().filter(l=>!l.pick&&l.ready),cl=L.filter(l=>l.cloud).length,n=+$('bn').value;
  if(cl&&!confirm(`${cl} of these ${L.length} lines use a cloud engine (paid). Generate ${n} takes each anyway?`))return;
  job({kind:'bulk',keys:L.map(l=>l.key),n})}
@@ -342,10 +370,10 @@ function refEditHtml(l,t){if(!RE||RE.path!=t.path)RE={path:t.path,voice:l.voice,
 function savedFlash(card){const s=card&&card.querySelector('.saved');if(s){s.textContent='saved ✓';s.classList.add('show');setTimeout(()=>s.classList.remove('show'),1500)}}
 async function saveLine(card){const l=S.find(x=>x.key==card.dataset.card);if(!l)return;const f=k=>card.querySelector(`[data-f="${k}"]`).value;
  const r=await api('/api/line',{ids:l.ids,voice:f('voice'),emotion:f('emotion'),note:f('note'),say:f('say'),engine:f('engine'),pitch_shift:f('pitch_shift'),voice_default:l.voice_default,emotion_default:l.emotion_default});
- savedFlash(card);if(r.job){$('jobs').classList.add('open');pollJobs()}const y=scrollY;await loadAll();scrollTo(0,y)}
+ savedFlash(card);if(r.job){pollJobs()}const y=scrollY;await loadAll();scrollTo(0,y)}
 $('lines').addEventListener('change',e=>{if(e.target.dataset.f){const c=e.target.closest('[data-card]');if(c)saveLine(c)}});
 let lastJob={k:'',t:0};
-async function job(b){const k=JSON.stringify(b);if(k==lastJob.k&&Date.now()-lastJob.t<2000)return;lastJob={k,t:Date.now()};await api('/api/job',b);$('jobs').classList.add('open');pollJobs()}
+async function job(b){const k=JSON.stringify(b);if(k==lastJob.k&&Date.now()-lastJob.t<2000)return;lastJob={k,t:Date.now()};await api('/api/job',b);pollJobs()}
 function genLine(btn,key,voice){const bar=btn.parentNode,rs=bar.querySelector('.rs'),es=bar.querySelector('.es'),l=S.find(x=>x.key==key);
  job({kind:'tts',key,voice,n:+bar.querySelector('.gn').value,ref:rs?rs.value:'',engine:es?es.value:'',parts:l&&l.parts.length||0})}
 function engPick(sel){const o=sel.selectedOptions[0],b=sel.parentNode.querySelector('.genb');
@@ -410,7 +438,7 @@ function partsHtml(l){if(PE&&PE.key==l.key)return partsEditHtml(l);
 async function useTry(key,part,name){await post('/api/parts/mix',{key,part,try:name})}
 async function partGain(key,part,gain){await post('/api/parts/mix',{key,part,gain:+gain})}
 async function partGap(key,index,secs){if(!/^\s*\d+(\.\d+)?\s*$/.test(secs)){note('A gap is seconds, like 0.6');draw();return}await post('/api/parts/gap',{key,index,secs:+secs})}
-async function joinParts(key){const r=await api('/api/parts/join',{key});const y=scrollY;await loadAll();scrollTo(0,y);$('jobs').classList.add('open');pollJobs();note(`Joined: ${r.take.split('/').pop().replace('.wav','')} (scoring)`)}
+async function joinParts(key){const r=await api('/api/parts/join',{key});const y=scrollY;await loadAll();scrollTo(0,y);pollJobs();note(`Joined: ${r.take.split('/').pop().replace('.wav','')} (scoring)`)}
 function partMore(btn,key,voice,part){const es=btn.closest('.card').querySelector('.es');job({kind:'tts',key,voice,n:2,part,engine:es?es.value:''});note('2 more tries of that part: each joined into a take when done')}
 async function mixFrom(key,take){ACT=null;const r=await api('/api/parts/mix',{key,from_take:take});const y=scrollY;await loadAll();scrollTo(0,y);
  note(r.kept==r.parts?'Its tries are chosen above: swap a part, then Join':`${r.kept} of ${r.parts} parts chosen (the others changed since)`)}
@@ -506,7 +534,7 @@ async function stopRec(discard){const R=REC;if(!R)return;REC=null;R.stream.getTr
   const warn=j.peak>.98?' It clipped: back off the mic.':j.peak<.05?' It\'s very quiet: move closer.':'';
   note(`Saved your take ${j.name} (${j.secs} s). Converting it…${warn}`);
   if(warn){const e=$('toast');e.style.background='#3a2a12';e.style.borderColor='var(--warn)'}
-  const y=scrollY;await loadAll();scrollTo(0,y);$('jobs').classList.add('open');pollJobs()}
+  const y=scrollY;await loadAll();scrollTo(0,y);pollJobs()}
  catch(e){flash('Your take was not saved: '+e.message)}}
 function wav(chunks,len,sr){const b=new ArrayBuffer(44+len*2),v=new DataView(b),s=(o,t)=>[...t].forEach((ch,i)=>v.setUint8(o+i,ch.charCodeAt(0)));
  s(0,'RIFF');v.setUint32(4,36+len*2,true);s(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
@@ -737,7 +765,7 @@ function addPane(){return `<div class="vhead"><span class="vn">Add a cast member
 async function saveVoice(card,el){const k=el.dataset.pf;let val=el.value;
  if(k=='engine'&&(C.engines.find(e=>e.id==val)||{}).cloud&&!confirm(`Switch ${card.dataset.voice} to ${engLabel(val)}? Its lines' words go to that service, and it's paid.`)){draw();return}
  const r=await api('/api/voice',{voice:card.dataset.voice,fields:{[k]:val}});savedFlash(card);
- if(r.job){$('jobs').classList.add('open');pollJobs()}   // a new pitch shift converts its recordings again
+ if(r.job){pollJobs()}   // a new pitch shift converts its recordings again
  if(k=='engine'){const y=scrollY;await loadAll();scrollTo(0,y)}else{C=await api('/api/cast');S=await api('/api/state')}}
 async function setPron(word,say){await api('/api/pronunciation',{word,say});const y=scrollY;await loadAll();scrollTo(0,y)}
 $('cast').addEventListener('change',async e=>{const t=e.target;
@@ -892,20 +920,56 @@ async function scene(id){stopScene();AU.pause();const T=TL.d;if(!T)return;const 
  stopScene()}
 function stopScene(){const s=SC;if(!s)return;SC=null;clearTimeout(s.timer);SA.pause();if(s.done)s.done();markScene()}
 
-// ------------------------------------------------------------------ jobs
-let pollT=null;
-async function pollJobs(){clearTimeout(pollT);try{J=await api('/api/jobs')}catch(e){pollT=setTimeout(pollJobs,4000);return}
- const cur=J.current,q=J.queued.length,done=J.recent[0];
+// ------------------------------------------------------------------ jobs: the sidebar
+let pollT=null,JSEQ=0,JGEN=0,JOUT=[],JLX=null,JLXS=null,JLXC=null,JLIST='',JDRAWN=0;
+let JOPEN=true;try{JOPEN=localStorage.getItem('vs_jobs')!='0'}catch(e){}
+try{const w=+localStorage.getItem('vs_jw');if(w)document.documentElement.style.setProperty('--jw',w+'px')}catch(e){}
+function setJobs(on){JOPEN=!!on;try{localStorage.setItem('vs_jobs',on?'1':'0')}catch(e){}layoutJobs();if(on){const lg=$('jlog');lg.scrollTop=lg.scrollHeight}}
+function layoutJobs(){document.body.classList.toggle('jopen',JOPEN);document.body.classList.toggle('jshut',!JOPEN);$('jobs').classList.toggle('shut',!JOPEN)}
+function gripJobs(e){e.preventDefault();const mv=ev=>{const w=Math.round(Math.max(260,Math.min(innerWidth-320,innerWidth-ev.clientX)));document.documentElement.style.setProperty('--jw',w+'px');try{localStorage.setItem('vs_jw',w)}catch(x){}};
+ const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up)};addEventListener('mousemove',mv);addEventListener('mouseup',up)}
+// Line ids and keys, and voice ids, in job labels and output are links: a line opens on the Lines tab, a voice on Cast.
+function linkIndex(){if(JLX&&JLXS===S&&JLXC===C)return JLX;const m=new Map();((C&&C.voices)||[]).forEach(v=>m.set(v.id,['v',v.id]));
+ S.forEach(l=>{l.ids.forEach(i=>m.set(i,['l',l.key]));m.set(l.key,['l',l.key])});JLX=m;JLXS=S;JLXC=C;return m}
+// Voices only in job labels, where one is named as a voice ("for mai", "mai's", "mai candidate 3"): a voice id can be
+// an everyday word ("shuttle") in a group title, a line's words or a file path.
+function linkify(s,voices){const m=linkIndex(),P=String(s??'').split(/([A-Za-z0-9_](?:[A-Za-z0-9_.\-]*[A-Za-z0-9_])?)/);
+ const asVoice=i=>voices&&(/^'s\b/.test(P[i+1]||'')||(P[i-1]==' '&&['for','into','on','score'].includes(P[i-2]))||(i==1&&!P[0]&&/^ candidate /.test(P[2]||'')));
+ return P.map((x,i)=>{let h=i%2?m.get(x):null;if(h&&h[0]=='v'&&!asVoice(i))h=null;if(!h)return esc(x);
+  return h[0]=='l'?`<a class="jl" href="#lines/${encodeURIComponent(h[1])}" data-line="${esc(h[1])}" title="Show this line">${esc(x)}</a>`
+                  :`<a class="jl jv" href="#cast/${encodeURIComponent(h[1])}" data-voice="${esc(h[1])}" title="Show this voice (the Cast tab)">${esc(x)}</a>`}).join('')}
+function goLine(key){if(!S.some(l=>l.key==key))return;tab='lines';try{localStorage.setItem('vs_tab','lines')}catch(e){}
+ let i=shown().findIndex(l=>l.key==key);
+ if(i<0){$('show').value='all';$('q').value='';$('voice').value='';$('group').value='';i=shown().findIndex(l=>l.key==key);note('Filters cleared to show '+key)}
+ sel=Math.max(0,i);try{history.replaceState(null,'','#lines/'+encodeURIComponent(key))}catch(e){}draw();
+ const e=$('L'+sel);if(e){e.scrollIntoView({block:'center'});e.classList.add('hl');setTimeout(()=>e.classList.remove('hl'),1600)}}
+function goVoice(v){tab='cast';try{localStorage.setItem('vs_tab','cast');localStorage.setItem('vs_cv',v)}catch(e){}
+ if(v!=CV){CSEL=null;CF=null;candFilter='all';CV=v}try{history.replaceState(null,'','#cast/'+encodeURIComponent(v))}catch(e){}draw();scrollTo(0,0)}
+$('jobs').addEventListener('click',e=>{const a=e.target.closest('a.jl');if(!a||e.button||e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();
+ if(a.dataset.line)goLine(a.dataset.line);else goVoice(a.dataset.voice);if(innerWidth<=900)setJobs(0)});
+async function pollJobs(){clearTimeout(pollT);try{J=await api(`/api/jobs?since=${JSEQ}&gen=${JGEN}`)}catch(e){pollT=setTimeout(pollJobs,4000);return}
+ const cur=J.current,q=J.queued.length,done=J.recent[0],lg=$('jlog'),atEnd=lg.scrollHeight-lg.scrollTop-lg.clientHeight<40;
+ const restart=J.gen!=JGEN;let fresh=(J.out||[]).filter(x=>restart||x[0]>JSEQ);if(restart)JOUT=[];const was=JOUT.length;JOUT.push(...fresh);
+ JGEN=J.gen;JSEQ=restart?J.seq:Math.max(JSEQ,J.seq);
+ const trim=JOUT.length>2500;if(trim)JOUT=JOUT.slice(-2000);   // trimmed 500 at a time, so the log is rarely drawn again whole
  $('jdot').className=cur?'spin':'';
- $('jsum').textContent=cur?`${cur.label} · step ${cur.step}/${cur.steps} · ${cur.secs} s${q?` · ${q} queued`:''}`:(done?`Last: ${done.label} · ${done.ok?'done':'stopped'} (${done.secs} s)`:'No jobs');
- $('jbody').innerHTML=`${cur?`<div class="jq">running: ${esc(cur.label)} <button onclick="cancelJob(${cur.id})">stop</button></div>`:''}
-  ${J.queued.map(j=>`<div class="jq">queued: ${esc(j.label)} <button onclick="cancelJob(${j.id})">remove</button></div>`).join('')}
-  ${J.recent.slice(0,5).map(j=>`<div class="jq">${j.ok?'✓':'✗'} ${esc(j.label)} · ${j.secs} s</div>`).join('')}
-  <pre id="jlog">${esc(J.log.join('\n'))||'(no output yet)'}</pre>`;
+ $('jsum').textContent=cur?`running${q?` · ${q} queued`:''}`:q?`${q} queued`:'idle';
+ $('jrail').innerHTML=`<span class="${cur?'spin':''}"></span><span class="jv">Jobs${cur||q?` · ${(cur?1:0)+q} to do`:''}${!cur&&done?` · last ${done.ok?'✓':'✗'}`:''}</span>`;
+ const list=`${cur?`<div class="jq run"><span class="spin"></span><span class="jt">${linkify(cur.label,1)}</span><span class="jsecs" id="jcur"></span><button onclick="cancelJob(${cur.id})">stop</button></div>`:''}
+  ${J.queued.map(j=>`<div class="jq"><span class="jt">queued: ${linkify(j.label,1)}</span><button onclick="cancelJob(${j.id})">remove</button></div>`).join('')}
+  ${J.recent.map(j=>`<div class="jq"><span class="${j.ok?'ok':'bad'}" title="${j.ok?'done':'stopped or failed: its output says why'}">${j.ok?'✓':'✗'}</span><span class="jt">${linkify(j.label,1)}</span><span class="jsecs">${j.secs} s</span></div>`).join('')}`;
+ if(list!=JLIST){JLIST=list;$('jlist').innerHTML=list.trim()||'<div class="src">No jobs yet.</div>'}
+ const jc=$('jcur');if(jc&&cur)jc.textContent=`step ${cur.step}/${cur.steps} · ${cur.secs} s`;
+ // Output: new lines are added; everything is drawn again after a clear, a trim, or new lines and voices to link.
+ if(restart||trim||JDRAWN!==JLX||!was){lg.innerHTML=JOUT.length?JOUT.map(x=>linkify(x[1])).join('\n'):'';JDRAWN=JLX}
+ else if(fresh.length)lg.insertAdjacentHTML('beforeend','\n'+fresh.map(x=>linkify(x[1])).join('\n'));
+ if(!JOUT.length)lg.innerHTML='<span class="src">(no output yet)</span>';
+ if(atEnd&&(fresh.length||restart))lg.scrollTop=lg.scrollHeight;
+ $('jclear').disabled=!J.recent.length&&!JOUT.length;
  paintJobs();
- const lg=$('jlog');if(lg)lg.scrollTop=lg.scrollHeight;
  if(done&&lastDone!==null&&done.id!==lastDone){const y=scrollY;await loadAll();scrollTo(0,y);if(tab=='timeline')loadTimeline()}
- lastDone=done?done.id:0;pollT=setTimeout(pollJobs,cur||q?1500:5000)}
+ lastDone=done?done.id:(lastDone===null?0:lastDone);pollT=setTimeout(pollJobs,cur||q?1500:5000)}
+async function clearJobs(){await api('/api/jobs/clear',{});note('Finished jobs and their output cleared');pollJobs()}
 async function cancelJob(id){await api('/api/job/cancel',{id});pollJobs()}
 
 ['voice','group','show'].forEach(id=>$(id).onchange=()=>{sel=0;draw()});$('q').oninput=()=>{sel=0;draw()};
@@ -938,5 +1002,5 @@ function applyHash(){const h=decodeURIComponent(location.hash.slice(1)).split('&
  if(t=='cast'&&arg&&arg!=CV){CSEL=null;CF=null;candFilter='all';CV=arg;try{localStorage.setItem('vs_cv',arg)}catch(e){}}draw();
  if(t=='cast'){scrollTo(0,0);return}const e=$('L'+sel);if(arg&&e)e.scrollIntoView({block:'center'})}
 window.addEventListener('hashchange',applyHash);
-loadAll().then(applyHash).then(pollJobs);listMics();
+layoutJobs();loadAll().then(applyHash).then(pollJobs);listMics();
 </script></body></html>
