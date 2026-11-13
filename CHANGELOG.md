@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 (2026-11-12)
+
+- **"Use as…" on Windows**: 0.1.0 sent the page Windows paths (`voices\mai\design\cand_3.wav`), and the page's
+  buttons read each backslash as an escape, so "Use as…" opened nothing (and other buttons on a candidate or take
+  missed their clip). 0.1.1 sends forward slashes; a check on the Windows test run now keeps it that way.
+
 ## 0.1.1 (2026-11-12)
 
 Windows.

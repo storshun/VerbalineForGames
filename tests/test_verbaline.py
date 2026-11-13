@@ -190,6 +190,15 @@ c4 = next(x for x in V['candidates'] if x['n'] == 4)
 check(f'a re-read says whose voice it is ({c4["reread"]})', c4['reread'] == dict(of=3, text='Hello.'))
 check(f'deleted candidates and older versions are counted apart ({V["rejected"]} deleted, {V["older"]} older)', V['rejected'] == 1 and V['older'] == 1)
 check(f'an empty emotion says what it falls back to ({V["fallback"].get("whisper")})', V['fallback'].get('whisper') == 'neutral' and 'shouting' not in V['fallback'])
+# The page writes paths into its buttons' onclick strings, where a Windows backslash is an escape: with
+# voices\lead\design\cand_3.wav, "Use as…" opened nothing. Paths the page gets use forward slashes on every system.
+def paths_in(x):
+    if isinstance(x, dict): return [p for k, v in x.items() for p in ([v] if k == 'path' and isinstance(v, str) else paths_in(v))]
+    if isinstance(x, list): return [p for v in x for p in paths_in(v)]
+    return []
+cast_paths = paths_in(vo_audition.cast_state(c, lambda: None)); state_paths = paths_in(vo_audition.state(c, lambda: None))
+check(f'the page\'s paths use forward slashes ({len(cast_paths)} on the Cast tab, {len(state_paths)} on Lines; e.g. {c4["path"]})',
+      cast_paths and c4['path'] == 'voices/lead/design/cand_4.wav' and not any('\\' in p for p in cast_paths + state_paths))
 
 
 # ------------------------------------------------------------------ review fixes
