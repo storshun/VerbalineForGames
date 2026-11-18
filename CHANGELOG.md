@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.5 (2026-11-18)
+
+Un-picks show as waiting.
+
+- **An un-pick is waiting for Apply**: un-picking a take the game already has showed nothing waiting, yet the next
+  Apply removed that line's clip from the game. With a project's `game_state` hook, such a line now says
+  "Un-picked: the game's clip for this line will be removed at the next Apply", the header counts it ("1 un-picked
+  line: the game's clip will be removed at the next Apply") and shows the Apply button, and the Timeline marks it.
+  Apply itself is unchanged. `/api/state` gives each card `unpick_pending`. Projects without the hook are as before.
+
 ## 0.1.4 (2026-11-13)
 
 The jobs sidebar, and clearing old takes.

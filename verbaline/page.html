@@ -309,6 +309,7 @@ function drawLines(){drawGame();drawBulk();const L=shown();$('count').textConten
    :`<div class="text">“${esc(l.text)}”<button class="ew" onclick="editWords('${l.key}')" title="Rewrite this line's words">✎ edit words</button></div>`}
    ${l.context?`<div class="src" title="The project's context for this line">${esc(l.context)}</div>`:''}
    ${l.pending?`<div class="pend" title="${l.game_text?'The game says: “'+esc(l.game_text)+'”':''}">Not in the game yet: ${esc(C.apply_label)} puts these words in the game.</div>`:''}
+   ${l.unpick_pending?`<div class="pend">Un-picked: the game's clip for this line will be removed at the next ${esc(C.apply_label)}.</div>`:''}
    ${l.pick&&l.takes.some(t=>t.path==l.pick&&t.old)?'<div class="pend">The picked take says the old words: generate new takes or pick one of the new words.</div>':''}
    ${drift(l)?`<div class="pend">${l.pick_older?`The pick was cloned from ${esc(l.voice)}'s ${esc(l.pick_older.emotion)} reference before it was replaced (${esc(l.pick_older.replaced)}): an older voice.`:`The pick's voice matches ${esc(l.voice)}'s ${esc(drift(l).ref||'')} reference only ${pct(drift(l).voice)}/100.`} <button class="mini" onclick="event.stopPropagation();lineForm('mirror','${l.key}','${drift(l).path}')" title="Its delivery, in ${esc(l.voice)}'s voice today (Seed-VC), as new takes">⇄ Mirror it into today's voice</button></div>`:''}
    <div class="dir2"><select data-f="voice" title="Who voices this line">${vopts}</select><select data-f="emotion" title="How it's played">${eopts}</select>
@@ -341,9 +342,10 @@ function saveTweak(key,take){tweak(key,take,$('tw').value)}
 function editWords(key){editing={mode:'words',key};draw();const t=$('wd');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);
  t.onkeydown=e=>{if(e.key=='Enter'&&(e.ctrlKey||e.metaKey)){saveWords(key);e.preventDefault()}if(e.key=='Escape'){editing=null;draw()}}}}
 async function saveWords(key){const l=S.find(x=>x.key==key),text=$('wd').value;editing=null;await post('/api/text',{ids:l.ids,text})}
-function drawGame(){const n=S.filter(l=>l.pending).length,p=S.filter(l=>l.pick_pending).length;
+function drawGame(){const n=S.filter(l=>l.pending).length,p=S.filter(l=>l.pick_pending).length,u=S.filter(l=>l.unpick_pending).length;
  const what=[n?`${n} line${n>1?'s':''}' words`:'',p?`${p} pick${p>1?'s':''}`:''].filter(Boolean).join(' and ');
- $('game').innerHTML=n||p?`<span class="pend">${what} not in the game yet</span><button class="go" onclick="job({kind:'apply'})" title="${esc(C.apply_about||'')}">${esc(C.apply_label)}</button>`
+ const gone=u?`${u} un-picked line${u>1?'s':''}: the game's clip${u>1?'s':''} will be removed at the next ${esc(C.apply_label)}`:'';
+ $('game').innerHTML=n||p||u?`<span class="pend">${[what?what+' not in the game yet':'',gone].filter(Boolean).join('; ')}</span><button class="go" onclick="job({kind:'apply'})" title="${esc(C.apply_about||'')}">${esc(C.apply_label)}</button>`
   :'<span class="src">game has these words and picks ✓</span>'}
 // Bulk: more takes for every shown line that still needs a pick (each on its own engine).
 function drawBulk(){const L=shown().filter(l=>!l.pick&&l.ready),cl=L.filter(l=>l.cloud).length,g=$('group').value;drawClear();
@@ -837,13 +839,13 @@ function drawTimeline(){drawGame();const T=TL.d,el=$('timeline');$('tf').innerHT
    h+=`<div class="tlx"><div class="tlxh">${x.who.map(w=>`<b style="color:${spkColor(w)};font-weight:600">${esc(w)}</b>`).join(' → ')} · ${x.n} lines</div>`}
   h+=it.k=='line'?tlLine(it.l,SI[it.l.id],T):it.k=='ev'?tlEv(it.e,T):tlEnd(T);last=Math.max(last,it.end??it.t)}
  if(open!=null)h+='</div>';
- const mine=new Set(T.lines.map(l=>SI[l.id]).filter(Boolean)),pend=[...mine].filter(s=>s.pending||s.pick_pending).length;
+ const mine=new Set(T.lines.map(l=>SI[l.id]).filter(Boolean)),pend=[...mine].filter(s=>s.pending||s.pick_pending||s.unpick_pending).length;
  const spk=[...new Set(L.map(l=>l.speaker.replace(/\s*\(.*\)$/,'')))];
  const kinds=Object.entries(T.kinds||{}).filter(([,k])=>k.strip&&k.strip!='none');
  el.innerHTML=`${SC?sceneBar():''}<div class="tlhead"><div class="tltitle">${esc(T.title||TL.g)}</div>
   ${T.summary?`<div class="tlsum">${esc(T.summary)}</div>`:''}
   ${(T.notes||[]).map(n=>`<div class="tlnote">${esc(n)}</div>`).join('')}
-  ${pend?`<div class="tlnote">${pend} line${pend>1?'s':''} here ${pend>1?'have':'has'} words or a pick the game doesn't have yet: their moments are the game's until ${esc(C.apply_label||'Apply')}.</div>`:''}</div>
+  ${pend?`<div class="tlnote">${pend} line${pend>1?'s':''} here ${pend>1?'have':'has'} words or a pick the game doesn't have yet, or a clip the game will lose (un-picked): their moments are the game's until ${esc(C.apply_label||'Apply')}.</div>`:''}</div>
   ${tlMap(T,L,E,end)}
   <div class="tlleg">${spk.map(s=>`<span><i style="background:${spkColor(s)}"></i>${esc(s)}</span>`).join('')}${T.lines.some(l=>l.est)?`<span title="A line not voiced yet: its length estimated from its words"><i style="background:#8b93a7;opacity:.5"></i>~ not voiced yet</span>`:''}
    ${kinds.map(([id,k])=>`<span title="${esc(k.about||'')}"><i style="background:${k.color||'#8b93a7'}"></i>${esc(k.label||id)}</span>`).join('')}
@@ -870,7 +872,7 @@ function tlLine(l,s,T){const c=spkColor(l.speaker),gone=l.start==null,key=s?s.ke
    :`<div class="tlw">“${esc(words)}”${s?`<button class="ew" onclick="tlEdit('${esc(l.id)}')" title="Rewrite this line's words here, in its moment">✎</button>`:''}</div>`}
   <div class="tlsub">${l.cause?`<span title="What sets it off">⟵ ${esc(l.cause)}</span>`:''}
    ${(l.context||[]).map(x=>`<span class="fx">${esc(x)}</span>`).join('')}${lag>1?`<span title="It was ready at ${mmss(l.arrive)} and waited behind other lines">waited ${lag.toFixed(1)} s</span>`:''}
-   ${s&&s.pending?'<span class="pend">new words, not in the game yet</span>':''}${s&&s.pick_pending?'<span class="pend">new pick, not in the game yet</span>':''}${s&&s.note?`<span class="dn" title="Its directing notes (Lines tab): ${esc(s.note)}">${esc(s.note)}</span>`:''}</div></div></div>`}
+   ${s&&s.pending?'<span class="pend">new words, not in the game yet</span>':''}${s&&s.pick_pending?'<span class="pend">new pick, not in the game yet</span>':''}${s&&s.unpick_pending?`<span class="pend">un-picked: the game's clip for this line will be removed at the next ${esc(C.apply_label||'Apply')}</span>`:''}${s&&s.note?`<span class="dn" title="Its directing notes (Lines tab): ${esc(s.note)}">${esc(s.note)}</span>`:''}</div></div></div>`}
 function ekStyle(c){c=c||'#8b93a7';return `color:${c};background:${c}26`}
 function tlEv(e,T){const k=kindOf(T,e.kind),label=e.label||(e.names&&e.names.length>1&&k.plural)||k.label||e.kind;
  const txt=`${e.names?esc(e.names.join(', ')):esc(e.text||'')}${e.detail?` <span class="src">${esc(e.detail)}</span>`:''}`;

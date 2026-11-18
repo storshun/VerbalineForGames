@@ -112,6 +112,8 @@ missing falls back to the lines file's behavior or the studio's default.
 
 - `ids` in `set_words` are every line sharing the recording; `text` is already whitespace-normalized.
 - `game_state` runs often: keep it to reading a few files. Return `None` from it to mean "not tracked".
+- With a `game_state` hook, a line whose key is in its picks but has no pick in the studio shows as waiting: the next
+  Apply hands over the picks without it, so the game loses that clip. Without the hook, un-picks aren't shown.
 - `apply`'s `run(label, argv, expect=None, timeout=900, cwd=None)` runs a command in the project root, logs it to
   `<work>/logs/apply_<time>_<label>.log`, prints progress to the jobs panel, and stops Apply when the command exits
   non-zero or its output lacks `expect`. Use it for imports and checks. `ctx.no_test` is true when Apply was asked to

@@ -456,6 +456,10 @@ check(f'...the manifest says the words, speaker, group, voice, take and length (
       and e.get('voice') == 'lead' and e.get('take') == 'takes/intro_alarm/qwen_1.wav' and 1.0 < e.get('seconds', 0) < 1.6 and m['project'] == 'Test')
 S1 = vo_audition.state(c, lambda: None)
 check('after Apply the page has nothing pending', not S1[0]['pending'] and not S1[0]['pick_pending'])
+c.save_json('picks.json', {})
+check('without a game_state hook an un-pick is not marked as waiting (only the hook says what the game has now)',
+      not vo_audition.state(c, lambda: None)[0]['unpick_pending'])
+c.save_json('picks.json', {'intro_alarm': dict(take='takes/intro_alarm/qwen_1.wav')})
 (PROJECT / 'verbaline.toml').write_text((PROJECT / 'verbaline.toml').read_text(encoding='utf-8') + 'words_from_manifest = true\n', encoding='utf-8'); c.reload()
 (PROJECT / 'lines.toml').write_text((PROJECT / 'lines.toml').read_text(encoding='utf-8').replace('battle stations!', 'action stations!'), encoding='utf-8')
 vo.cmd_lines(c, A2())
@@ -495,6 +499,24 @@ ca.save_json('picks.json', {'dock_01': dict(take='takes/dock_01/qwen_1.wav')})
 vo.cmd_apply(ca, A2())
 words, picks = ca.project.game_state(ca)
 check(f'...its Apply writes the game\'s voice table, which its game_state reads back ({picks})', picks == {'dock_01': 'takes/dock_01/qwen_1.wav'} and words['dock_01'].startswith('Last call'))
+Sa = {x['key']: x for x in vo_audition.state(ca, lambda: None)}
+check('...after Apply the applied line isn\'t waiting, and no line shows an un-pick',
+      not Sa['dock_01']['pending'] and not Sa['dock_01']['pick_pending'] and not any(x['unpick_pending'] for x in Sa.values()))
+ca.save_json('picks.json', {})
+Sa = {x['key']: x for x in vo_audition.state(ca, lambda: None)}
+check('un-picking a take the game has is waiting: the next Apply removes that line\'s clip',
+      Sa['dock_01']['unpick_pending'] and not Sa['dock_01']['pick_pending'] and not any(x['unpick_pending'] for k, x in Sa.items() if k != 'dock_01'))
+pg = (REPO / 'verbaline/page.html').read_text(encoding='utf-8')
+check('...and the page says so on the line, in the header\'s count and summary, and on the Timeline',
+      'l.unpick_pending?' in pg and 'u=S.filter(l=>l.unpick_pending)' in pg and 'n||p||u?' in pg and 's.unpick_pending' in pg
+      and pg.count("the game's clip for this line will be removed at the next") == 2 and "will be removed at the next ${esc(C.apply_label)}`" in pg)
+real_gs = vo_audition.game_state; vo_audition.game_state = lambda c: (None, {})     # the hook returned None, or failed
+check('...but not when the game state is unknown', not any(x['unpick_pending'] for x in vo_audition.state(ca, lambda: None)))
+vo_audition.game_state = real_gs
+vo.cmd_apply(ca, A2())
+check('Apply is unchanged: the un-picked line leaves the game, and then nothing is waiting',
+      ca.project.game_state(ca)[1] == {} and not any(x['unpick_pending'] for x in vo_audition.state(ca, lambda: None)))
+ca.save_json('picks.json', {'dock_01': dict(take='takes/dock_01/qwen_1.wav')}); vo.cmd_apply(ca, A2())
 T2 = ca.project.timeline(ca, 'dock', {})
 check(f'...and a voiced line lasts its take on the timeline ({T2["lines"][0]["end"] - T2["lines"][0]["start"]:.2f} s)',
       not T2['lines'][0]['est'] and abs(T2['lines'][0]['end'] - T2['lines'][0]['start'] - 2.0) < .2)

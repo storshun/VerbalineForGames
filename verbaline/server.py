@@ -166,6 +166,9 @@ def state(c, export):
     picks = c.json('picks.json', {}); regen = set(c.json('regen.json', [])); tweaks = c.json('tweaks.json', {})
     engines = models.engines(c); out = []; groups = {}
     game, applied = game_state(c)
+    # Only a project's game_state hook says what the game has right now, so only then is an un-pick something waiting:
+    # the game still has that line's clip, and the next Apply hands over picks without it.
+    hooked = c.project.hook('game_state') is not None
     for r in c.lines(): groups.setdefault(r['key'], []).append(r)
     tuned_voices = {v for v in {r['voice'] for rows in groups.values() for r in rows} if tuned(c, v)}
     for key, rows in groups.items():
@@ -218,7 +221,8 @@ def state(c, export):
         pick = picks.get(key, {}).get('take')
         auto, _ = c.ref(r['voice'], r['emotion'])         # the reference "auto" clones (its emotion's, else neutral...)
         older = older_ref(c, r['voice'], made.get(Path(pick).name, {})) if pick and Path(pick).parent.name == key else None
-        out.append(dict(pending=pending, pick_pending=bool(pick) and applied.get(key) != pick, game_text=(game or {}).get(r['id'], ''),key=key, ids=[x['id'] for x in rows], group=r['group'], speaker=r['speaker'], context=r.get('context', ''), kind=r.get('kind', ''),
+        out.append(dict(pending=pending, pick_pending=bool(pick) and applied.get(key) != pick,
+                        unpick_pending=hooked and not pick and bool((applied or {}).get(key)), game_text=(game or {}).get(r['id'], ''),key=key, ids=[x['id'] for x in rows], group=r['group'], speaker=r['speaker'], context=r.get('context', ''), kind=r.get('kind', ''),
                         voice=r['voice'], voice_default=r.get('voice_default', ''), text=r['text'],
                         emotion=r['emotion'], emotion_default=r.get('emotion_default', 'neutral'), note=r['note'],
                         say=r.get('say_override', ''), engine=eng, engine_line=r.get('engine', ''), voice_engine=c.engine(r['voice']), cloud=engines.get(eng, {}).get('cloud', False),

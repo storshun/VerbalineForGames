@@ -102,5 +102,7 @@ The page talks to the server in JSON; the main routes, for tools and tests (`ver
 retry, convert, restyle, mirror, beat, score, train, apply), `POST /api/job/cancel {id}`, `GET /api/jobs?since=<seq>&gen=<gen>` (output lines after `since` as `out: [[seq, text]]`; all of them when `gen` isn't the studio's: its history was cleared), `POST /api/jobs/clear`, `POST /api/takes/clear {group, unpicked, dry}` (`dry`: what would move, as `plan`; otherwise a job). `/api/state` is a list of cards, one per recording: `key`, `ids`, `group`, `speaker`, `voice`, `text`, `emotion`,
 `note`, `kind`, `context`, `takes` (each with `path`, `name`, `source`, checks), `pick` (a take's `path`), `pending`
 (its words differ from the game's), `game_text` (the game's words), `pick_pending` (the pick isn't applied yet),
+`unpick_pending` (no pick, but the project's `game_state` hook says the game has a clip for it, which the next Apply
+removes; always false without that hook),
 `parts`, and the directing fields. The server listens
 on localhost only.

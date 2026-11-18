@@ -40,6 +40,8 @@ import settings, a voice table, lip sync).
 The header says what the game doesn't have yet:
 
 - **Picks not applied:** always tracked, from the last Apply.
+- **Un-picks:** only with an adapter's `game_state` hook: a line the game has a clip for and that has no pick now is
+  waiting too, because the next Apply removes that clip from the game.
 - **Words changed since:** only when the game keeps its own copy of the words: an adapter's `game_state` hook reads
   them from the game's files, or `[apply] words_from_manifest` says the game takes them from the manifest. A game that
   reads the same lines file the studio edits always has the current words.
